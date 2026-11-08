@@ -148,8 +148,38 @@ function drag(w, from, to) {
     lim.value = '10';
     lim.dispatchEvent(new w.Event('change'));
     await wait(50);
-    check('inline category limit is saved globally', () => {
-      assert.strictEqual(JSON.parse(w.__store.cfg).cats.find((c) => c.id === 'uni').limitH, 10);
+    check('category limit cannot exceed the free hours of the week', () => {
+      // Week 30 h, Career 16 h + Personal 6 h → at most 8 h are left for University.
+      assert.strictEqual(JSON.parse(w.__store.cfg).cats.find((c) => c.id === 'uni').limitH, 8);
+      assert.ok($('toastMsg').textContent.includes('Лимит «Университет» уменьшен до 8ч'), $('toastMsg').textContent);
+      assert.strictEqual(colByTitle($('weekBoard'), 'Университет').querySelector('.num-input').max, '8');
+    });
+
+    check('the week panel shows how much is allocated', () => {
+      assert.ok($('weekPanel').textContent.includes('Распределено по категориям 30ч из 30ч'));
+    });
+
+    const personalLim = colByTitle($('weekBoard'), 'Личное').querySelector('.num-input');
+    personalLim.value = '4';
+    personalLim.dispatchEvent(new w.Event('change'));
+    await wait(50);
+    const uniLim = colByTitle($('weekBoard'), 'Университет').querySelector('.num-input');
+    uniLim.value = '10';
+    uniLim.dispatchEvent(new w.Event('change'));
+    await wait(50);
+    check('freed hours can be given to another category', () => {
+      const cats = JSON.parse(w.__store.cfg).cats;
+      assert.strictEqual(cats.find((c) => c.id === 'personal').limitH, 4);
+      assert.strictEqual(cats.find((c) => c.id === 'uni').limitH, 10);
+    });
+
+    const weekLim = $('weekPanel').querySelector('.num-input');
+    weekLim.value = '20';
+    weekLim.dispatchEvent(new w.Event('change'));
+    await wait(50);
+    check('week limit cannot go below the category limits together', () => {
+      assert.strictEqual(JSON.parse(w.__store.cfg).weekLimitH, 30);
+      assert.ok($('toastMsg').textContent.includes('Лимит недели поднят до 30ч'));
     });
 
     // Categories editor: rename Career, add a category, cancel asks before discarding.
@@ -158,6 +188,19 @@ function drag(w, from, to) {
     check('categories editor lists categories with translated placeholders', () => {
       assert.deepStrictEqual([...nameInputs].map((i) => i.placeholder), ['Несортированное', 'Университет', 'Карьера', 'Личное']);
       assert.strictEqual($('modal').querySelectorAll('.catrow .danger').length, 3, 'Unsorted cannot be deleted');
+    });
+    const limInputs = $('modal').querySelectorAll('.catrow input[type=number]');
+    limInputs[3].value = '9'; // Personal 4 → 9: 10 + 16 + 9 = 35 > 30
+    limInputs[3].dispatchEvent(new w.Event('input'));
+    check('editor blocks saving while category limits exceed the week', () => {
+      assert.ok($('edSave').disabled);
+      assert.ok($('edAlloc').textContent.includes('35ч больше лимита недели 30ч'), $('edAlloc').textContent);
+    });
+    limInputs[3].value = '4';
+    limInputs[3].dispatchEvent(new w.Event('input'));
+    check('editor allows saving again when limits fit', () => {
+      assert.ok(!$('edSave').disabled);
+      assert.ok($('edAlloc').textContent.includes('30ч из 30ч'));
     });
     nameInputs[2].value = 'Работа';
     nameInputs[2].dispatchEvent(new w.Event('input'));

@@ -2,6 +2,15 @@
 
 The project is in early development (0.x). Data formats and UI may still change.
 
+## 0.6.0 — 2026-11-08
+
+- Category limits together cannot exceed the week limit.
+  - A category limit above the free hours of the week is lowered to the free hours, with a message.
+  - A week limit below the category limits together is raised to their sum, with a message.
+  - The week panel shows "Allocated to categories X of Y".
+  - The categories editor shows the sum while typing and blocks Save while it exceeds the week limit.
+- Categories without a limit (∞) are not counted. With no week limit there is no restriction.
+
 ## 0.5.1 — 2026-11-08
 
 - Priority looks like in Super Productivity: a digit in a ring, 1 light blue, 2 amber, 3 red.

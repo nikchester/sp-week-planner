@@ -366,6 +366,14 @@
       toDoing: 'Start →', toDone: 'Done →', toTodo: '← To do', reopen: '← Reopen',
       toastAdded: 'Added to week {w}: {n}', toastMoved: 'Moved to week {w}: {n}', toastRemoved: 'Removed from the week: {n}',
       undo: 'Undo', undone: 'Undone',
+      allocated: 'Allocated to categories {a} of {b}',
+      allocOver: 'Category limits ({a}) exceed the week limit ({b}). Lower the category limits.',
+      catClamped: 'Limit of "{name}" lowered to {t}: category limits together cannot exceed the week limit ({w}).',
+      catNoRoom: 'Limit of "{name}" not changed: all {w} of the week are already allocated to categories.',
+      weekClamped: 'Week limit raised to {t}: it cannot be lower than the category limits together.',
+      edAllocOk: 'Category limits together: {a} of {b}.',
+      edAllocOver: 'Category limits together ({a}) exceed the week limit ({b}). Lower them to save.',
+      edAllocNoWeek: 'Category limits together: {a}. No week limit set.',
       ctxMore: 'Task actions', ctxToday: 'Today', ctxTomorrow: 'Tomorrow', ctxNextMon: 'Next Mon', ctxDate: 'Date',
       ctxDueTitle: 'Set the due day to {d}', ctxClearDue: 'Remove due date', ctxSetDue: 'Set',
       ctxDone: 'Mark as done', ctxUndone: 'Mark as not done', ctxTrack: 'Start time tracking',
@@ -429,6 +437,14 @@
       toDoing: 'В работу →', toDone: 'Готово →', toTodo: '← Сделать', reopen: '← Вернуть',
       toastAdded: 'Добавлено на неделю {w}: {n}', toastMoved: 'Перенесено на неделю {w}: {n}', toastRemoved: 'Убрано из недели: {n}',
       undo: 'Отменить', undone: 'Действие отменено',
+      allocated: 'Распределено по категориям {a} из {b}',
+      allocOver: 'Сумма лимитов категорий ({a}) больше лимита недели ({b}). Уменьшите лимиты категорий.',
+      catClamped: 'Лимит «{name}» уменьшен до {t}: сумма лимитов категорий не может быть больше лимита недели ({w}).',
+      catNoRoom: 'Лимит «{name}» не изменён: все {w} недели уже распределены по категориям.',
+      weekClamped: 'Лимит недели поднят до {t}: он не может быть меньше суммы лимитов категорий.',
+      edAllocOk: 'Сумма лимитов категорий: {a} из {b}.',
+      edAllocOver: 'Сумма лимитов категорий {a} больше лимита недели {b}. Уменьшите лимиты, чтобы сохранить.',
+      edAllocNoWeek: 'Сумма лимитов категорий: {a}. Лимит недели не задан.',
       ctxMore: 'Действия с задачей', ctxToday: 'Сегодня', ctxTomorrow: 'Завтра', ctxNextMon: 'След. пн', ctxDate: 'Дата',
       ctxDueTitle: 'Срок: {d}', ctxClearDue: 'Убрать срок', ctxSetDue: 'Задать',
       ctxDone: 'Отметить как выполненное', ctxUndone: 'Вернуть в работу', ctxTrack: 'Начать отслеживание времени',
@@ -1203,19 +1219,58 @@
     return input;
   }
 
+  // The category limits together must not exceed the week limit.
+  function catLimitSum(cats, exceptId) {
+    return cats.reduce(function (s, c) { return s + (c.id !== exceptId && c.limitH ? c.limitH : 0); }, 0);
+  }
+  function hrs(h) { return fmtDur(h * HOUR); }
+
   function limitInput(catId) {
     var c = catId === '_week' ? null : catById(catId);
     var val = c ? c.limitH : state.cfg.weekLimitH;
-    return numInput(val, '0.5', c ? t('limitTitle') : t('weekLimitTitle'), async function (v) {
-      if (catId === '_week') state.cfg.weekLimitH = v;
-      else {
+    var input = numInput(val, '0.5', c ? t('limitTitle') : t('weekLimitTitle'), async function (v) {
+      var week = state.cfg.weekLimitH;
+      if (catId === '_week') {
+        var sum = catLimitSum(state.cfg.cats);
+        if (v !== null && v < sum) {
+          v = sum;
+          showToast(t('weekClamped', { t: hrs(sum) }), true, null);
+        }
+        state.cfg.weekLimitH = v;
+      } else {
         var target = state.cfg.cats.filter(function (x) { return x.id === catId; })[0];
         if (!target) return;
+        if (week && v !== null) {
+          var room = Math.max(0, week - catLimitSum(state.cfg.cats, catId));
+          if (room <= 0) {
+            showToast(t('catNoRoom', { name: catName(target), w: hrs(week) }), true, null);
+            render(true);
+            return;
+          }
+          if (v > room) {
+            v = room;
+            showToast(t('catClamped', { name: catName(target), t: hrs(room), w: hrs(week) }), true, null);
+          }
+        }
         target.limitH = v;
       }
       render(true);
       await saveCfg();
     });
+    if (c && state.cfg.weekLimitH) {
+      input.max = String(Math.max(0, state.cfg.weekLimitH - catLimitSum(state.cfg.cats, catId)));
+    }
+    return input;
+  }
+
+  function allocEl() {
+    var week = state.cfg.weekLimitH;
+    var sum = catLimitSum(state.cfg.cats);
+    if (!week) return null;
+    if (sum > week) {
+      return el('span', { className: 'bad-text', style: 'font-size:12px', text: '⚠ ' + t('allocOver', { a: hrs(sum), b: hrs(week) }) });
+    }
+    return el('span', { className: 'muted', text: t('allocated', { a: hrs(sum), b: hrs(week) }) });
   }
 
   function loadBar(h, lim) {
@@ -1421,6 +1476,7 @@
       el('span', { className: 'hours' + (wl && ld.total > wl ? ' over' : '') }, [t('weekTotal', { t: fmtDur(ld.total) }), limitInput('_week'), t('h')]),
       el('span', { className: 'muted', text: t('doneN', { d: done, n: ld.tasks.length }) }),
       el('span', { className: 'muted', text: t('spentWeek', { t: fmtDur(spent) }) }),
+      allocEl(),
       loadBar(ld.total, wl)
     ]);
     $('addInput').placeholder = t('addPh', { c: catName(catById(UNSORTED)) });
@@ -2024,7 +2080,7 @@
         el('input', {
           type: 'number', min: '0', step: '0.5', style: 'width:90px', value: c.limitH ? String(c.limitH) : '',
           placeholder: '∞', 'aria-label': t('catLimit'),
-          oninput: function (ev) { var v = parseFloat(String(ev.target.value).replace(',', '.')); c.limitH = v > 0 ? v : null; }
+          oninput: function (ev) { var v = parseFloat(String(ev.target.value).replace(',', '.')); c.limitH = v > 0 ? v : null; updateAlloc(); }
         }),
         el('span', { className: 'muted', text: t('catLimit') }),
         el('button', { type: 'button', className: 'icon', text: '↑', 'aria-label': '↑', onclick: function () { moveIn(d.cats, i, -1); } }),
@@ -2074,8 +2130,9 @@
         el('label', { text: t('weekLimit') }),
         el('input', {
           type: 'number', min: '0', step: '0.5', style: 'width:120px', value: d.weekLimitH ? String(d.weekLimitH) : '', placeholder: '∞',
-          oninput: function (ev) { var v = parseFloat(String(ev.target.value).replace(',', '.')); d.weekLimitH = v > 0 ? v : null; }
-        })
+          oninput: function (ev) { var v = parseFloat(String(ev.target.value).replace(',', '.')); d.weekLimitH = v > 0 ? v : null; updateAlloc(); }
+        }),
+        el('div', { id: 'edAlloc', className: 'muted', style: 'margin-top:6px' })
       ]));
       nodes.push(el('div', { className: 'field' }, [el('label', { text: t('cardSort') })].concat(sortRows(d.cardSort))));
     }
@@ -2083,15 +2140,35 @@
     nodes.push(el('div', { className: 'modal-foot' }, [
       el('span', { className: 'grow' }),
       el('button', { type: 'button', text: editor.discardArmed ? t('discard') : t('cancel'), onclick: requestCloseEditor }),
-      el('button', { type: 'button', className: 'primary', text: t('save'), onclick: run(saveEditor) })
+      el('button', { type: 'button', id: 'edSave', className: 'primary', text: t('save'), onclick: run(saveEditor) })
     ]));
     fill($('modal'), nodes);
     updatePreview();
+    updateAlloc();
+  }
+
+  function allocOver(d) {
+    return !!d.weekLimitH && catLimitSum(d.cats) > d.weekLimitH;
+  }
+
+  function updateAlloc() {
+    if (!editor || editor.kind !== 'cats') return;
+    var d = editor.draft;
+    var box = $('edAlloc');
+    var sum = catLimitSum(d.cats);
+    var over = allocOver(d);
+    if (box) {
+      box.className = over ? 'bad-text' : 'muted';
+      box.textContent = !d.weekLimitH ? t('edAllocNoWeek', { a: hrs(sum) })
+        : (over ? '⚠ ' + t('edAllocOver', { a: hrs(sum), b: hrs(d.weekLimitH) }) : t('edAllocOk', { a: hrs(sum), b: hrs(d.weekLimitH) }));
+    }
+    if ($('edSave')) $('edSave').disabled = over;
   }
 
   async function saveEditor() {
     if (!editor) return;
     var d = editor.draft;
+    if (editor.kind === 'cats' && allocOver(d)) { updateAlloc(); return; }
     if (editor.kind === 'pool') {
       state.cfg.pool = { id: 'pool', match: d.match === 'any' ? 'any' : 'all', conds: d.conds, sort: d.sort };
     } else {
