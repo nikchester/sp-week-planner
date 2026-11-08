@@ -3,6 +3,8 @@
   'use strict';
 
   var KEY_PREFIX = 't_';
+  var NAV_SECRET = 'nav';
+  var UNSORTED = 'unsorted';
   var WEEK_RE = /^\d{4}-W\d{2}$/;
 
   var TEXT = {
@@ -12,6 +14,7 @@
       weekAfter: 'Plan for the week after next',
       unpin: 'Remove from week',
       planner: 'Week planner',
+      kanban: 'Week kanban',
       pinned: 'Task planned for {week}',
       unpinned: 'Task removed from its week',
       notPinned: 'Task is not planned for any week',
@@ -27,6 +30,7 @@
       weekAfter: 'Через неделю',
       unpin: 'Убрать из недели',
       planner: 'План недели',
+      kanban: 'Канбан недели',
       pinned: 'Задача запланирована: {week}',
       unpinned: 'Задача убрана из недели',
       notPinned: 'Задача не привязана к неделе',
@@ -124,14 +128,33 @@
   }
 
   // ---------- storage: one synced key per task ----------
-  async function getWeek(taskId) {
-    var v = await PluginAPI.loadSyncedData(KEY_PREFIX + taskId);
-    return v && WEEK_RE.test(v) ? v : null;
+  // Value: JSON {w: "2026-W45", c: categoryId, s: "todo" | "doing"}.
+  // Versions 0.1–0.3 stored only the week string; it is still read.
+  function parseEntry(v) {
+    if (!v) return null;
+    if (WEEK_RE.test(v)) return { w: v, c: UNSORTED, s: 'todo' };
+    try {
+      var o = JSON.parse(v);
+      if (o && WEEK_RE.test(o.w)) return { w: o.w, c: o.c || UNSORTED, s: o.s === 'doing' ? 'doing' : 'todo' };
+    } catch (e) {
+      /* ignore broken entries */
+    }
+    return null;
+  }
+
+  async function getEntry(taskId) {
+    return parseEntry(await PluginAPI.loadSyncedData(KEY_PREFIX + taskId));
   }
 
   async function setWeek(taskId, weekKey) {
-    // An empty string clears the entry; listSyncedDataKeys skips empty keys.
-    await PluginAPI.persistDataSynced(weekKey || '', KEY_PREFIX + taskId);
+    if (!weekKey) {
+      // An empty string clears the entry; listSyncedDataKeys skips empty keys.
+      await PluginAPI.persistDataSynced('', KEY_PREFIX + taskId);
+      return;
+    }
+    var old = await getEntry(taskId);
+    var entry = { w: weekKey, c: old ? old.c : UNSORTED, s: old ? old.s : 'todo' };
+    await PluginAPI.persistDataSynced(JSON.stringify(entry), KEY_PREFIX + taskId);
   }
 
   async function loadAssignments() {
@@ -143,8 +166,8 @@
     );
     var map = {};
     keys.forEach(function (k, i) {
-      var v = vals[i];
-      if (v && WEEK_RE.test(v)) map[k.slice(KEY_PREFIX.length)] = v;
+      var e = parseEntry(vals[i]);
+      if (e) map[k.slice(KEY_PREFIX.length)] = e.w;
     });
     return map;
   }
@@ -155,8 +178,22 @@
     PluginAPI.showSnack({ msg: t('error', { msg: msg }), type: 'ERROR' });
   }
 
-  function openPlanner() {
+  // The view reads the requested page from local (not synced) secret storage.
+  async function openPage(page) {
+    try {
+      await PluginAPI.setSecret(NAV_SECRET, JSON.stringify({ page: page, ts: Date.now() }));
+    } catch (e) {
+      PluginAPI.log.warn('[week-planner] cannot store navigation request', e);
+    }
     PluginAPI.showIndexHtmlAsView();
+  }
+
+  function openPlanner() {
+    openPage('plan');
+  }
+
+  function openKanban() {
+    openPage('kanban');
   }
 
   // ---------- UI entry points (plugin.js only) ----------
@@ -192,7 +229,7 @@
     icon: 'event_busy',
     onClick: async function (ctx) {
       try {
-        if (!(await getWeek(ctx.taskId))) {
+        if (!(await getEntry(ctx.taskId))) {
           PluginAPI.showSnack({ msg: t('notPinned'), type: 'INFO' });
           return;
         }
@@ -210,16 +247,28 @@
     onClick: openPlanner
   });
 
+  PluginAPI.registerHeaderButton({
+    label: t('kanban'),
+    icon: 'view_kanban',
+    onClick: openKanban
+  });
+
   PluginAPI.registerShortcut({
     id: 'open-week-planner',
     label: t('planner'),
     onExec: openPlanner
   });
 
+  PluginAPI.registerShortcut({
+    id: 'open-week-kanban',
+    label: t('kanban'),
+    onExec: openKanban
+  });
+
   // ---------- hooks ----------
   PluginAPI.registerHook(PluginAPI.Hooks.TASK_DELETE, async function (payload) {
     try {
-      if (payload && payload.taskId && (await getWeek(payload.taskId))) {
+      if (payload && payload.taskId && (await getEntry(payload.taskId))) {
         await setWeek(payload.taskId, null);
       }
     } catch (e) {
@@ -253,7 +302,7 @@
           msg: t('weekStarted', { n: +key.slice(6), count: c.planned }),
           type: 'INFO',
           ico: 'date_range',
-          action: { label: t('open'), onClick: openPlanner }
+          action: { label: t('open'), onClick: openKanban }
         });
       }
       lastWeekKey = key;

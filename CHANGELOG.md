@@ -2,6 +2,23 @@
 
 The project is in early development (0.x). Data formats and UI may still change.
 
+## 0.4.0 — 2026-11-08
+
+The planner is split into three pages: Planning, Week and Kanban.
+
+- **Planning:** unplanned pool on the left, six upcoming weeks on the right with load per category and week total.
+  Click a week to make it the target of the pool buttons; drop tasks onto any week.
+- **Week:** categories as columns (Unsorted, University, Career, Personal by default). New tasks of the week go to
+  Unsorted; drag a card to sort it. Edit the estimate in hours right on the card.
+- **Categories and limits are global:** rename, add, delete and reorder categories once for all weeks.
+  Each category has its own hour limit, and the week has a total limit.
+- **Kanban:** current week with To do / In progress / Done columns and a category filter.
+  Moving a card to Done marks the task done in Super Productivity.
+- New header button and shortcut "Week kanban"; the existing button opens Planning.
+- Filtered lists from 0.2–0.3 are replaced by manual categories. Old lists become categories,
+  the weekly limit of "All tasks of the week" becomes the week limit.
+- Task entries now store week, category and kanban status as JSON. Entries of 0.1–0.3 are still read.
+
 ## 0.3.0 — 2026-11-08
 
 UX fixes after an expert review of the planner.

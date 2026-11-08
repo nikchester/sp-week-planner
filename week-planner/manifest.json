@@ -1,10 +1,10 @@
 {
   "id": "week-planner",
   "name": "Week Planner",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "manifestVersion": 1,
   "minSupVersion": "20.0.0",
-  "description": "Plan tasks for whole weeks: unplanned pool, custom filtered lists with hour limits.",
+  "description": "Plan tasks for whole weeks: planning pool, weekly categories with hour limits, and a weekly kanban board.",
   "hooks": [],
   "permissions": [],
   "iFrame": true,

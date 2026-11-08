@@ -29,16 +29,17 @@ const url = 'file:///' + harness.replace(/\\/g, '/');
 // viewport is emulated with an iframe of the exact width.
 const phone = path.join(outDir, 'phone.html');
 fs.writeFileSync(phone, '<!doctype html><body style="margin:0;background:#888">' +
-  '<iframe src="harness.html?theme=light" style="width:380px;height:2600px;border:0;display:block"></iframe></body>');
+  '<iframe src="harness.html?theme=light&page=week" style="width:380px;height:2600px;border:0;display:block"></iframe></body>');
 const phoneUrl = 'file:///' + phone.replace(/\\/g, '/');
 const shots = [
-  ['desktop-light', '?theme=light', '1400,1500'],
-  ['desktop-dark', '?theme=dark', '1400,1500'],
-  ['pool-selection', '?act=select', '1400,900'],
-  ['undo-toast', '?act=toast', '1400,900'],
-  ['list-editor', '?act=editor', '1400,1000'],
+  ['planning', '?page=plan', '1400,1100'],
+  ['week', '?page=week', '1400,1100'],
+  ['kanban', '?page=kanban', '1400,900'],
+  ['week-dark', '?page=week&theme=dark', '1400,1100'],
+  ['categories-editor', '?page=week&act=cats', '1400,900'],
+  ['pool-filter-editor', '?page=plan&act=pooleditor', '1400,900'],
   ['mobile', null, '520,2600'],
-  ['empty', '?act=empty', '1400,800']
+  ['empty', '?page=plan&act=empty', '1400,800']
 ];
 for (const [name, query, size] of shots) {
   execFileSync(browser, ['--headless=new', '--disable-gpu', '--hide-scrollbars', '--virtual-time-budget=3000',
