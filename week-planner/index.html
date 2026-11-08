@@ -244,6 +244,7 @@
         <input id="poolSearch" type="search" autocomplete="off">
         <button type="button" id="poolCfgBtn"></button>
       </div>
+      <div id="poolPresets" class="chips" style="margin-bottom:8px"></div>
       <div id="poolSummary" class="muted hint"></div>
       <div id="poolHint" class="muted hint"></div>
       <div class="toolbar">
@@ -367,6 +368,18 @@
       toDoing: 'Start →', toDone: 'Done →', toTodo: '← To do', reopen: '← Reopen',
       toastAdded: 'Added to week {w}: {n}', toastMoved: 'Moved to week {w}: {n}', toastRemoved: 'Removed from the week: {n}',
       undo: 'Undo', undone: 'Undone',
+      pr_custom: 'My filter', pr_urgent: 'Urgent', pr_week: 'Due in W{n}', pr_prio: 'With priority',
+      pr_noest: 'No estimate', pr_quick: 'Quick ≤ 30m', pr_started: 'Started', pr_stale: 'Old', pr_issues: 'From tracker',
+      prh_custom: 'Your filter from "Filter & sort"',
+      prh_urgent: 'Due in 7 days or earlier, overdue included. By due date.',
+      prh_week: 'Due in the week selected on the right. By due date.',
+      prh_prio: 'Tasks with a priority. 3 first, then 2, then 1.',
+      prh_noest: 'Tasks without an estimate: estimate them before planning.',
+      prh_quick: 'Estimate of 30 minutes or less. Shortest first.',
+      prh_started: 'Time already tracked. Most tracked first.',
+      prh_stale: 'Created more than 30 days ago. Oldest first.',
+      prh_issues: 'Tasks from GitHub, GitLab and other trackers.',
+      edPoolFrom: 'Based on the ready-made filter "{p}". After saving it becomes "My filter".',
       allocated: 'Allocated to categories {a} of {b}',
       allocOver: 'Category limits ({a}) exceed the week limit ({b}). Lower the category limits.',
       catClamped: 'Limit of "{name}" lowered to {t}: category limits together cannot exceed the week limit ({w}).',
@@ -406,7 +419,7 @@
       op_contains: 'contains', op_notContains: 'does not contain', op_equals: 'equals', op_startsWith: 'starts with',
       op_empty: 'is empty', op_notEmpty: 'is not empty', op_gt: '>', op_gte: '≥', op_lt: '<', op_lte: '≤', op_eq: '=',
       op_isTrue: 'yes', op_isFalse: 'no', op_on: 'on', op_before: 'before', op_after: 'after',
-      op_overdue: 'is overdue', op_withinDays: 'within next N days', op_inSelWeek: 'in target week',
+      op_overdue: 'is overdue', op_withinDays: 'within the next', op_byDays: 'no later than in', op_olderThanDays: 'more than', daysAgo: 'days ago', op_inSelWeek: 'in target week',
       op_in: 'is one of', op_notIn: 'is not one of', op_any: 'has any of', op_all: 'has all of', op_none: 'has none of'
     },
     ru: {
@@ -438,6 +451,18 @@
       toDoing: 'В работу →', toDone: 'Готово →', toTodo: '← Сделать', reopen: '← Вернуть',
       toastAdded: 'Добавлено на неделю {w}: {n}', toastMoved: 'Перенесено на неделю {w}: {n}', toastRemoved: 'Убрано из недели: {n}',
       undo: 'Отменить', undone: 'Действие отменено',
+      pr_custom: 'Мой фильтр', pr_urgent: 'Срочные', pr_week: 'Срок в нед. {n}', pr_prio: 'С приоритетом',
+      pr_noest: 'Без оценки', pr_quick: 'Быстрые ≤ 30м', pr_started: 'Начатые', pr_stale: 'Давно лежат', pr_issues: 'Из трекера',
+      prh_custom: 'Ваш фильтр из «Фильтр и сортировка»',
+      prh_urgent: 'Срок через 7 дней или раньше, включая просроченные. По сроку.',
+      prh_week: 'Срок попадает в неделю, выбранную справа. По сроку.',
+      prh_prio: 'Задачи с приоритетом. Сначала 3, потом 2, потом 1.',
+      prh_noest: 'Задачи без оценки: их надо оценить перед планированием.',
+      prh_quick: 'Оценка 30 минут или меньше. Короткие — выше.',
+      prh_started: 'Уже есть затраченное время. Больше затрачено — выше.',
+      prh_stale: 'Созданы больше 30 дней назад. Старые — выше.',
+      prh_issues: 'Задачи из GitHub, GitLab и других трекеров.',
+      edPoolFrom: 'Основа — готовый фильтр «{p}». После сохранения он станет «Моим фильтром».',
       allocated: 'Распределено по категориям {a} из {b}',
       allocOver: 'Сумма лимитов категорий ({a}) больше лимита недели ({b}). Уменьшите лимиты категорий.',
       catClamped: 'Лимит «{name}» уменьшен до {t}: сумма лимитов категорий не может быть больше лимита недели ({w}).',
@@ -477,7 +502,7 @@
       op_contains: 'содержит', op_notContains: 'не содержит', op_equals: 'равно', op_startsWith: 'начинается с',
       op_empty: 'пусто', op_notEmpty: 'не пусто', op_gt: '>', op_gte: '≥', op_lt: '<', op_lte: '≤', op_eq: '=',
       op_isTrue: 'да', op_isFalse: 'нет', op_on: 'в день', op_before: 'раньше', op_after: 'позже',
-      op_overdue: 'просрочен', op_withinDays: 'в ближайшие N дней', op_inSelWeek: 'в целевую неделю',
+      op_overdue: 'просрочен', op_withinDays: 'в ближайшие', op_byDays: 'не позже чем через', op_olderThanDays: 'более', daysAgo: 'дн. назад', op_inSelWeek: 'в целевую неделю',
       op_in: 'один из', op_notIn: 'не из', op_any: 'любой из', op_all: 'все из', op_none: 'ни одного из'
     }
   };
@@ -612,11 +637,12 @@
     num: ['gt', 'gte', 'lt', 'lte', 'eq', 'empty', 'notEmpty'],
     dur: ['gt', 'gte', 'lt', 'lte', 'eq', 'empty', 'notEmpty'],
     bool: ['isTrue', 'isFalse'],
-    date: ['before', 'after', 'on', 'overdue', 'withinDays', 'inSelWeek', 'empty', 'notEmpty'],
+    date: ['before', 'after', 'on', 'overdue', 'withinDays', 'byDays', 'olderThanDays', 'inSelWeek', 'empty', 'notEmpty'],
     ref: ['in', 'notIn', 'empty', 'notEmpty'],
     set: ['any', 'all', 'none', 'empty', 'notEmpty']
   };
   var NO_VALUE_OPS = { empty: 1, notEmpty: 1, isTrue: 1, isFalse: 1, overdue: 1, inSelWeek: 1 };
+  var DAYS_OPS = { withinDays: 1, byDays: 1, olderThanDays: 1 };
   var fields = [];
   var fieldMap = {};
 
@@ -694,6 +720,8 @@
         if (op === 'after') return !c.value || d > c.value;
         if (op === 'overdue') return d < state.today;
         if (op === 'withinDays') return d >= state.today && d <= addDays(state.today, Number(c.value) || 0);
+        if (op === 'byDays') return d <= addDays(state.today, Number(c.value) || 0);
+        if (op === 'olderThanDays') return d < addDays(state.today, -(Number(c.value) || 0));
         if (op === 'inSelWeek') return isoWeekKey(new Date(v)) === state.target;
         return true;
       }
@@ -802,7 +830,8 @@
       },
       cats: d.cats,
       weekLimitH: posNum(raw.weekLimitH),
-      cardSort: normSort(raw.cardSort, d.cardSort)
+      cardSort: normSort(raw.cardSort, d.cardSort),
+      poolPreset: typeof raw.poolPreset === 'string' ? raw.poolPreset : null
     };
     if (Array.isArray(raw.cats)) {
       cfg.cats = raw.cats.filter(function (c) { return c && c.id; }).map(function (c) {
@@ -1079,8 +1108,40 @@
       .sort(function (a, b) { return state.assign[a.id].w < state.assign[b.id].w ? -1 : 1; });
   }
 
+  // ---------- ready-made pool filters ----------
+  // Every preset hides subtasks, like the default custom filter: their hours are part of the parent.
+  var NO_SUB = { field: 'isSubtask', op: 'isFalse' };
+  var PRESETS = [
+    { id: 'urgent', conds: [{ field: 'due', op: 'byDays', value: 7 }], sort: [{ field: 'due', dir: 'asc' }, { field: 'x:priority', dir: 'desc' }] },
+    { id: 'week', conds: [{ field: 'due', op: 'inSelWeek' }], sort: [{ field: 'due', dir: 'asc' }] },
+    { id: 'prio', needs: 'x:priority', conds: [{ field: 'x:priority', op: 'notEmpty' }], sort: [{ field: 'x:priority', dir: 'desc' }, { field: 'due', dir: 'asc' }] },
+    { id: 'noest', conds: [{ field: 'timeEstimate', op: 'empty' }], sort: [{ field: 'due', dir: 'asc' }, { field: 'created', dir: 'asc' }] },
+    { id: 'quick', conds: [{ field: 'timeEstimate', op: 'notEmpty' }, { field: 'timeEstimate', op: 'lte', value: 0.5 }], sort: [{ field: 'timeEstimate', dir: 'asc' }, { field: 'due', dir: 'asc' }] },
+    { id: 'started', conds: [{ field: 'timeSpent', op: 'notEmpty' }], sort: [{ field: 'timeSpent', dir: 'desc' }] },
+    { id: 'stale', conds: [{ field: 'created', op: 'olderThanDays', value: 30 }], sort: [{ field: 'created', dir: 'asc' }] },
+    { id: 'issues', conds: [{ field: 'hasIssue', op: 'isTrue' }], sort: [{ field: 'due', dir: 'asc' }, { field: 'issueType', dir: 'asc' }] }
+  ];
+
+  function presetView(p) {
+    return { id: 'pool', match: 'all', conds: [NO_SUB].concat(p.conds), sort: p.sort };
+  }
+  function availablePresets() {
+    return PRESETS.filter(function (p) { return !p.needs || fieldMap[p.needs]; });
+  }
+  function presetLabel(id) {
+    return id === 'week' ? t('pr_week', { n: weekNum(state.target) }) : t('pr_' + id);
+  }
+  function activePreset() {
+    var id = state.cfg.poolPreset;
+    return availablePresets().filter(function (p) { return p.id === id; })[0] || null;
+  }
+  function activePoolView() {
+    var p = activePreset();
+    return p ? presetView(p) : state.cfg.pool;
+  }
+
   function poolTasks(view) {
-    var v = view || state.cfg.pool;
+    var v = view || activePoolView();
     var q = state.poolQuery.trim().toLowerCase();
     return sortTasks(Object.keys(state.tasks).map(function (id) { return state.tasks[id]; }).filter(function (task) {
       return !task.isDone && !state.archived[task.id] && !state.assign[task.id] &&
@@ -1409,7 +1470,22 @@
     list.forEach(function (x) { visibleIds[x.id] = true; });
     Object.keys(state.poolSel).forEach(function (id) { if (!visibleIds[id]) delete state.poolSel[id]; });
     $('poolInfo').textContent = nTasks(list.length) + ' · ' + t('estimate', { t: fmtDur(hoursOf(list)) });
-    $('poolSummary').textContent = viewSummary(state.cfg.pool);
+    $('poolSummary').textContent = viewSummary(activePoolView());
+    var cur = activePreset() ? activePreset().id : 'custom';
+    fill($('poolPresets'), [{ id: 'custom' }].concat(availablePresets()).map(function (p) {
+      var on = cur === p.id;
+      var n = poolTasks(p.id === 'custom' ? state.cfg.pool : presetView(p)).length;
+      return el('button', {
+        type: 'button', className: 'tog' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false',
+        title: t('prh_' + p.id), text: (p.id === 'custom' ? t('pr_custom') : presetLabel(p.id)) + ' · ' + n,
+        onclick: run(function () {
+          state.cfg.poolPreset = p.id === 'custom' ? null : p.id;
+          state.poolSel = {};
+          render(true);
+          return saveCfg();
+        })
+      });
+    }));
     fill($('poolList'), list.map(poolRow));
     $('poolEmpty').hidden = list.length > 0;
     renderPoolToolbar();
@@ -1964,7 +2040,7 @@
   // ---------- editors ----------
   function openEditor(kind) {
     var draft = kind === 'pool'
-      ? JSON.parse(JSON.stringify(state.cfg.pool))
+      ? JSON.parse(JSON.stringify(activePoolView()))
       : JSON.parse(JSON.stringify({ cats: state.cfg.cats, weekLimitH: state.cfg.weekLimitH, cardSort: state.cfg.cardSort }));
     editor = { kind: kind, draft: draft, orig: JSON.stringify(draft), armed: null, discardArmed: false };
     $('overlay').hidden = false;
@@ -1988,7 +2064,8 @@
   function defaultValue(type, op) {
     if (NO_VALUE_OPS[op]) return undefined;
     if (type === 'ref' || type === 'set') return [];
-    if (op === 'withinDays') return 7;
+    if (op === 'withinDays' || op === 'byDays') return 7;
+    if (op === 'olderThanDays') return 30;
     if (type === 'date') return state.today;
     if (type === 'num' || type === 'dur') return 0;
     return '';
@@ -2033,7 +2110,7 @@
     if (f.type === 'ref') return (c.value || []).map(function (id) { return state.projects[id] || id; }).join(', ');
     if (f.type === 'set') return (c.value || []).map(function (id) { return '#' + tagTitle(id); }).join(', ');
     if (f.type === 'dur') return (c.value || 0) + ' ' + t('h');
-    if (c.op === 'withinDays') return (c.value || 0) + ' ' + t('days');
+    if (DAYS_OPS[c.op]) return (c.value || 0) + ' ' + (c.op === 'olderThanDays' ? t('daysAgo') : t('days'));
     return c.value === undefined ? '' : String(c.value);
   }
   function condText(c) {
@@ -2054,11 +2131,11 @@
     if (f.type === 'set') {
       return chipSelect(Object.keys(state.tags).map(function (id) { return { id: id, title: '#' + state.tags[id] }; }), c.value || [], upd);
     }
-    if (f.type === 'date' && c.op !== 'withinDays') {
+    if (f.type === 'date' && !DAYS_OPS[c.op]) {
       return el('input', { type: 'date', value: c.value || '', oninput: function (ev) { upd(ev.target.value); } });
     }
-    if (f.type === 'num' || f.type === 'dur' || c.op === 'withinDays') {
-      var unit = f.type === 'dur' ? t('h') : (c.op === 'withinDays' ? t('days') : '');
+    if (f.type === 'num' || f.type === 'dur' || DAYS_OPS[c.op]) {
+      var unit = f.type === 'dur' ? t('h') : (c.op === 'olderThanDays' ? t('daysAgo') : (DAYS_OPS[c.op] ? t('days') : ''));
       var inp = el('input', {
         type: 'number', step: f.type === 'dur' ? '0.25' : '1', style: 'width:90px', value: c.value === undefined ? '' : String(c.value),
         oninput: function (ev) { upd(parseFloat(String(ev.target.value).replace(',', '.')) || 0); }
@@ -2075,7 +2152,7 @@
     (OPS[type] || []).forEach(function (op) { opSel.appendChild(el('option', { value: op, text: t('op_' + op) })); });
     opSel.value = c.op;
     opSel.addEventListener('change', function () {
-      var shape = function (op) { return NO_VALUE_OPS[op] ? 'none' : (op === 'withinDays' ? 'days' : 'v'); };
+      var shape = function (op) { return NO_VALUE_OPS[op] ? 'none' : (DAYS_OPS[op] ? 'days' : 'v'); };
       var old = shape(c.op);
       c.op = opSel.value;
       if (old !== shape(c.op)) c.value = defaultValue(type, c.op);
@@ -2165,6 +2242,7 @@
     var nodes = [];
     if (editor.kind === 'pool') {
       nodes.push(el('h2', { text: t('edPool') }));
+      if (activePreset()) nodes.push(el('p', { className: 'muted', text: t('edPoolFrom', { p: presetLabel(activePreset().id) }) }));
       var matchSel = el('select');
       matchSel.appendChild(el('option', { value: 'all', text: t('matchAll') }));
       matchSel.appendChild(el('option', { value: 'any', text: t('matchAny') }));
@@ -2232,6 +2310,7 @@
     if (editor.kind === 'cats' && allocOver(d)) { updateAlloc(); return; }
     if (editor.kind === 'pool') {
       state.cfg.pool = { id: 'pool', match: d.match === 'any' ? 'any' : 'all', conds: d.conds, sort: d.sort };
+      state.cfg.poolPreset = null; // the edited filter becomes "My filter"
     } else {
       state.cfg.cats = d.cats.map(function (c) {
         var name = (c.name || '').trim();

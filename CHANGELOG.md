@@ -2,6 +2,16 @@
 
 The project is in early development (0.x). Data formats and UI may still change.
 
+## 0.8.0 — 2026-11-08
+
+- **Ready-made filters for the unplanned pool**, shown as buttons with task counts:
+  Urgent (due in 7 days or earlier, overdue included), Due in the target week, With priority,
+  No estimate, Quick (≤ 30 min), Started, Old (created more than 30 days ago), From tracker.
+  "My filter" is the editable custom filter. The chosen filter is remembered.
+- "Filter & sort" with a ready-made filter active starts from its conditions; saving makes it "My filter".
+- New date conditions: "no later than in N days" (overdue included) and "more than N days ago".
+- "With priority" appears only when tasks have the `priority` field.
+
 ## 0.7.0 — 2026-11-08
 
 - **Default limits and own week limits.** The "Categories & default limits" dialog sets the default week limit

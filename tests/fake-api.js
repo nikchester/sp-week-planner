@@ -42,7 +42,8 @@ module.exports = function fakeApiSource() {
     T('s1', 'Бэкап перед миграцией', { projectId: 'work', parentId: 'p2', timeEstimate: 1 * H }),
     T('s2', 'Прогнать тесты', { projectId: 'work', parentId: 'p2', timeEstimate: 2 * H }),
     T('p3', 'Купить подарок маме', { dueDay: '2026-11-20' }),
-    T('p4', 'Прочитать «Designing Data-Intensive Applications», гл. 5', { tagIds: ['read'], timeEstimate: 2 * H }),
+    T('p4', 'Прочитать «Designing Data-Intensive Applications», гл. 5', { tagIds: ['read'], timeEstimate: 2 * H, priority: 2 }),
+    T('p8', 'Ответить на письмо куратора', { projectId: 'uni', timeEstimate: 0.25 * H }),
     T('p5', 'Записаться к стоматологу', {}),
     T('p6', 'Эссе по философии', { projectId: 'uni', tagIds: ['kai'], timeEstimate: 2.5 * H, dueDay: '2026-11-18', deadlineDay: '2026-11-17' }),
     T('p7', 'Настроить мониторинг Grafana', { projectId: 'work', timeEstimate: 4 * H, issueId: '123', issueType: 'GITLAB' })

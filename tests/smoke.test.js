@@ -102,6 +102,40 @@ function drag(w, from, to) {
       assert.ok(!names($('poolList')).includes('Настроить мониторинг Grafana'));
       assert.ok($('weeksGrid').querySelectorAll('.wcard')[0].textContent.includes('23ч 30м / 30ч'));
     });
+
+    // Ready-made filters. Target week is 46 here (selected above).
+    const chipTexts = () => [...$('poolPresets').querySelectorAll('.tog')].map((b) => b.textContent);
+    check('ready-made filters are listed with task counts', () => {
+      assert.deepStrictEqual(chipTexts(), [
+        'Мой фильтр · 7', 'Срочные · 1', 'Срок в нед. 46 · 1', 'С приоритетом · 1', 'Без оценки · 2',
+        'Быстрые ≤ 30м · 1', 'Начатые · 0', 'Давно лежат · 7', 'Из трекера · 0'
+      ]);
+    });
+    btn($('poolPresets'), 'Срочные · 1').click();
+    await wait(50);
+    check('a ready-made filter narrows the pool and is remembered', () => {
+      assert.deepStrictEqual(names($('poolList')), ['Лабораторная №3 по физике']);
+      assert.strictEqual(JSON.parse(w.__store.cfg).poolPreset, 'urgent');
+      assert.ok($('poolSummary').textContent.includes('Срок (день или время) не позже чем через 7 дн.'), $('poolSummary').textContent);
+    });
+    btn($('poolPresets'), 'Быстрые ≤ 30м · 1').click();
+    await wait(50);
+    check('"Quick" shows short tasks', () => {
+      assert.deepStrictEqual(names($('poolList')), ['Ответить на письмо куратора']);
+    });
+    $('poolCfgBtn').click();
+    check('editing starts from the active ready-made filter', () => {
+      assert.ok($('modal').textContent.includes('Основа — готовый фильтр «Быстрые ≤ 30м»'));
+      assert.strictEqual($('modal').querySelectorAll('.cond').length, 3);
+    });
+    btn($('modal'), 'Сохранить').click();
+    await wait(50);
+    check('saving turns it into "My filter"', () => {
+      const cfg = JSON.parse(w.__store.cfg);
+      assert.strictEqual(cfg.poolPreset, null);
+      assert.ok(cfg.pool.conds.some((c) => c.field === 'timeEstimate' && c.op === 'lte'));
+      assert.ok(chipTexts()[0].startsWith('Мой фильтр · 1'));
+    });
   }
 
   // ---------- week page ----------
