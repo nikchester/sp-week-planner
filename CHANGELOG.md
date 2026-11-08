@@ -2,6 +2,16 @@
 
 The project is in early development (0.x). Data formats and UI may still change.
 
+## 0.5.0 — 2026-11-08
+
+- **Task menu:** right-click any task card (or press "⋯" on it) to open a menu like the native task menu of
+  Super Productivity. The plugin API cannot open the native menu, so the plugin draws its own:
+  due date (Today, Tomorrow, Next Monday, Date), mark done, start time tracking, estimate, toggle tags,
+  move to another project, priority, week, category, open task details, delete task (with a second click).
+- Priority (P1–P3) is shown on cards. It is set through `updateTask` with the `priority` field, which is not part
+  of the public `types.ts`; it works only if the host accepts this field.
+- The `priority` task field is labelled "Priority" in the pool filter and sort.
+
 ## 0.4.0 — 2026-11-08
 
 The planner is split into three pages: Planning, Week and Kanban.

@@ -167,6 +167,42 @@
   .modal-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; }
   .modal-foot .grow { flex: 1; }
 
+  /* task context menu */
+  .ctx {
+    position: fixed; z-index: 30; min-width: 270px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px);
+    overflow: auto; padding: 4px 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .3);
+  }
+  .ctx-item {
+    display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 14px;
+    border: 0; border-radius: 0; background: transparent; text-align: left;
+  }
+  .ctx-item:hover:not(:disabled), .ctx-item:focus-visible { background: var(--accent-soft); outline: none; }
+  .ctx-item .ico { width: 18px; text-align: center; color: var(--muted); flex-shrink: 0; }
+  .ctx-item .grow { flex: 1; }
+  .ctx-item .val { color: var(--muted); font-size: 12px; }
+  .ctx-item.danger, .ctx-item.danger .ico { color: var(--bad); }
+  .ctx-item.armed { background: var(--bad); color: #fff; }
+  .ctx-item.armed .ico { color: #fff; }
+  .ctx-sep { height: 1px; margin: 4px 0; background: var(--border); }
+  .ctx-dates { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .ctx-date {
+    display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px;
+    border: 0; border-radius: 0; background: transparent; font-size: 12px;
+  }
+  .ctx-date .ico { font-size: 16px; color: var(--muted); }
+  .ctx-date:hover, .ctx-date:focus-visible { background: var(--accent-soft); outline: none; }
+  .ctx-head { padding: 8px 14px 4px; font-weight: 600; }
+  .ctx-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 14px; }
+  .more-btn { width: 26px; height: 24px; padding: 0; line-height: 20px; font-size: 16px; }
+  .prio { font-weight: 700; }
+  .prio-1 { color: #dc2626; }
+  .prio-2 { color: #ea580c; }
+  .prio-3 { color: #2563eb; }
+  body.dark .prio-1 { color: #f87171; }
+  body.dark .prio-2 { color: #fb923c; }
+  body.dark .prio-3 { color: #60a5fa; }
+
   /* toast */
   .toast {
     position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 20;
@@ -274,6 +310,7 @@
 </div>
 
 <div id="overlay" class="overlay" hidden><div id="modal" class="modal" role="dialog" aria-modal="true"></div></div>
+<div id="ctxMenu" class="ctx" role="menu" hidden></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden>
   <span id="toastMsg"></span>
   <button type="button" id="toastUndo" class="small"></button>
@@ -324,6 +361,14 @@
       toDoing: 'Start →', toDone: 'Done →', toTodo: '← To do', reopen: '← Reopen',
       toastAdded: 'Added to week {w}: {n}', toastMoved: 'Moved to week {w}: {n}', toastRemoved: 'Removed from the week: {n}',
       undo: 'Undo', undone: 'Undone',
+      ctxMore: 'Task actions', ctxToday: 'Today', ctxTomorrow: 'Tomorrow', ctxNextMon: 'Next Mon', ctxDate: 'Date',
+      ctxDueTitle: 'Set the due day to {d}', ctxClearDue: 'Remove due date', ctxSetDue: 'Set',
+      ctxDone: 'Mark as done', ctxUndone: 'Mark as not done', ctxTrack: 'Start time tracking',
+      ctxEstimate: 'Estimate', ctxNoEst: 'No estimate', ctxCustom: 'Custom, h', ctxApply: 'OK',
+      ctxTags: 'Toggle tags', ctxProject: 'Move to another project', ctxPriority: 'Priority', ctxNoPrio: 'No priority',
+      ctxWeek: 'Week', ctxThisWeek: 'This week', ctxNextWeek: 'Next week', ctxWeekAfter: 'Week after next',
+      ctxUnplan: 'Remove from week', ctxNotPlanned: 'not planned', ctxCat: 'Category', ctxOpen: 'Open task details',
+      ctxDelete: 'Delete task', ctxDelConfirm: 'Click again to delete', ctxBack: '← Back', ctxDeleted: 'Task deleted',
       cat_unsorted: 'Unsorted', cat_uni: 'University', cat_career: 'Career', cat_personal: 'Personal',
       edCats: 'Categories and limits', edCatsHint: 'Categories and limits are the same for every week.',
       catName: 'Name', catLimit: 'limit, h', addCat: '+ Category', weekLimit: 'Limit for the whole week, hours',
@@ -379,6 +424,14 @@
       toDoing: 'В работу →', toDone: 'Готово →', toTodo: '← Сделать', reopen: '← Вернуть',
       toastAdded: 'Добавлено на неделю {w}: {n}', toastMoved: 'Перенесено на неделю {w}: {n}', toastRemoved: 'Убрано из недели: {n}',
       undo: 'Отменить', undone: 'Действие отменено',
+      ctxMore: 'Действия с задачей', ctxToday: 'Сегодня', ctxTomorrow: 'Завтра', ctxNextMon: 'След. пн', ctxDate: 'Дата',
+      ctxDueTitle: 'Срок: {d}', ctxClearDue: 'Убрать срок', ctxSetDue: 'Задать',
+      ctxDone: 'Отметить как выполненное', ctxUndone: 'Вернуть в работу', ctxTrack: 'Начать отслеживание времени',
+      ctxEstimate: 'Оценка', ctxNoEst: 'Без оценки', ctxCustom: 'Своё значение, ч', ctxApply: 'OK',
+      ctxTags: 'Переключать метки', ctxProject: 'Переместить в другой проект', ctxPriority: 'Приоритет', ctxNoPrio: 'Без приоритета',
+      ctxWeek: 'Неделя', ctxThisWeek: 'Эта неделя', ctxNextWeek: 'Следующая неделя', ctxWeekAfter: 'Через неделю',
+      ctxUnplan: 'Убрать из недели', ctxNotPlanned: 'не запланирована', ctxCat: 'Категория', ctxOpen: 'Открыть панель задачи',
+      ctxDelete: 'Удалить задачу', ctxDelConfirm: 'Нажмите ещё раз, чтобы удалить', ctxBack: '← Назад', ctxDeleted: 'Задача удалена',
       cat_unsorted: 'Несортированное', cat_uni: 'Университет', cat_career: 'Карьера', cat_personal: 'Личное',
       edCats: 'Категории и лимиты', edCatsHint: 'Категории и лимиты общие для всех недель.',
       catName: 'Название', catLimit: 'лимит, ч', addCat: '+ Категория', weekLimit: 'Лимит на всю неделю, часов',
@@ -566,7 +619,8 @@
     Object.keys(extra).sort().forEach(function (k) {
       var type = extra[k];
       fields.push({
-        id: 'x:' + k, type: type, group: 'other', label: t('f_extra', { k: k }),
+        id: 'x:' + k, type: type, group: k === 'priority' ? 'main' : 'other',
+        label: k === 'priority' ? t('ctxPriority') : t('f_extra', { k: k }),
         val: type === 'date' ? function (x) { return dateVal(x[k]); } : function (x) { return x[k] === undefined ? null : x[k]; }
       });
     });
@@ -1094,6 +1148,8 @@
   // ---------- shared pieces ----------
   function metaEl(task, extra) {
     var parts = [];
+    var prio = prioOf(task);
+    if (prio) parts.push(el('span', { className: 'prio prio-' + prio, text: 'P' + prio }));
     if (task.projectId && state.projects[task.projectId]) parts.push(state.projects[task.projectId]);
     (task.tagIds || []).forEach(function (id) { if (id !== TODAY_TAG) parts.push('#' + tagTitle(id)); });
     if (task.parentId) parts.push(t('subtask'));
@@ -1192,6 +1248,7 @@
         })
       ])
     ]);
+    attachCtx(li, task, li.querySelector('.actions'));
     li.addEventListener('click', function () { togglePoolSel(task.id, li); });
     li.addEventListener('keydown', function (ev) {
       if (ev.target !== li) return;
@@ -1247,6 +1304,7 @@
         onclick: run(function () { return planTasks([task.id], state.curWeek); })
       })])
     ]);
+    attachCtx(li, task, li.querySelector('.actions'));
     makeDraggable(li, task.id);
     return li;
   }
@@ -1329,6 +1387,7 @@
         ])
       ])
     ]);
+    attachCtx(li, task, li.querySelector('.card-foot'));
     makeDraggable(li, task.id);
     return li;
   }
@@ -1424,6 +1483,7 @@
         el('div', { className: 'card-foot' }, [el('span', { className: 'grow' })].concat(btns))
       ])
     ]);
+    attachCtx(li, task, li.querySelector('.card-foot'));
     makeDraggable(li, task.id);
     return li;
   }
@@ -1471,6 +1531,278 @@
       });
       return col;
     }));
+  }
+
+  // ---------- task context menu ----------
+  // The native task menu of Super Productivity cannot be opened from a plugin (no API for it),
+  // so the plugin shows its own menu with the actions the plugin API allows.
+  var ctx = null; // { id, view, x, y, delArmed }
+
+  function prioOf(task) {
+    var p = Number(task.priority);
+    return p >= 1 && p <= 3 ? p : null;
+  }
+
+  function attachCtx(li, task, holder) {
+    li.addEventListener('contextmenu', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      openCtx(task.id, ev.clientX, ev.clientY);
+    });
+    if (holder) {
+      holder.appendChild(el('button', {
+        type: 'button', className: 'more-btn', text: '⋯', title: t('ctxMore'), 'aria-haspopup': 'menu',
+        onclick: stop(function (ev) {
+          var r = ev.currentTarget.getBoundingClientRect();
+          openCtx(task.id, r.left, r.bottom + 2);
+        })
+      }));
+    }
+  }
+
+  function openCtx(id, x, y) {
+    ctx = { id: id, view: 'main', x: x, y: y, delArmed: false };
+    renderCtx();
+  }
+
+  function closeCtx() {
+    ctx = null;
+    $('ctxMenu').hidden = true;
+    fill($('ctxMenu'), []);
+  }
+
+  function ctxGo(view) {
+    ctx.view = view;
+    ctx.delArmed = false;
+    renderCtx();
+  }
+
+  // Runs an action, closes the menu and refreshes data afterwards.
+  function ctxAct(fn) {
+    return function () {
+      closeCtx();
+      run(function () { return Promise.resolve(fn()).then(scheduleLoad); })();
+    };
+  }
+
+  function ctxItem(ico, label, onClick, opts) {
+    opts = opts || {};
+    return el('button', {
+      type: 'button', role: 'menuitem', className: 'ctx-item' + (opts.cls ? ' ' + opts.cls : ''),
+      disabled: opts.disabled ? 'disabled' : null, title: opts.title || null, onclick: onClick
+    }, [
+      el('span', { className: 'ico', text: ico }),
+      el('span', { className: 'grow', text: label }),
+      opts.val ? el('span', { className: 'val', text: opts.val }) : null,
+      opts.sub ? el('span', { className: 'val', text: '▸' }) : null
+    ]);
+  }
+  function ctxSep() { return el('div', { className: 'ctx-sep', role: 'separator' }); }
+  function ctxBack(title) {
+    return [ctxItem('', t('ctxBack'), function () { ctxGo('main'); }), el('div', { className: 'ctx-head', text: title }), ctxSep()];
+  }
+  function radio(on) { return on ? '●' : '○'; }
+
+  async function updateTaskFields(task, changes) {
+    Object.keys(changes).forEach(function (k) { task[k] = changes[k]; });
+    render(true);
+    await PluginAPI.updateTask(task.id, changes);
+  }
+
+  function setDue(task, day) {
+    return updateTaskFields(task, { dueDay: day, dueWithTime: null });
+  }
+
+  function nextMonday() {
+    var d = parseYmd(state.today);
+    d.setDate(d.getDate() + 7 - (d.getDay() + 6) % 7); // Monday of next week
+    return ymd(d);
+  }
+
+  async function deleteTaskFully(task) {
+    await PluginAPI.deleteTask(task.id);
+    if (state.assign[task.id]) {
+      delete state.assign[task.id];
+      await PluginAPI.persistDataSynced('', KEY_PREFIX + task.id);
+    }
+    delete state.tasks[task.id];
+    render(true);
+    showToast(t('ctxDeleted'), false, null);
+  }
+
+  function ctxMain(task) {
+    var archived = !!state.archived[task.id];
+    var hasSubs = (task.subTaskIds || []).length > 0;
+    var e = state.assign[task.id];
+    var dateBtn = function (ico, label, day) {
+      return el('button', {
+        type: 'button', role: 'menuitem', className: 'ctx-date', title: t('ctxDueTitle', { d: fmtDay(parseYmd(day)) }),
+        onclick: ctxAct(function () { return setDue(task, day); })
+      }, [el('span', { className: 'ico', text: ico }), el('span', { text: label })]);
+    };
+    var items = [];
+    if (!archived) {
+      items.push(el('div', { className: 'ctx-dates' }, [
+        dateBtn('☀', t('ctxToday'), state.today),
+        dateBtn('☽', t('ctxTomorrow'), addDays(state.today, 1)),
+        dateBtn('»', t('ctxNextMon'), nextMonday()),
+        el('button', { type: 'button', role: 'menuitem', className: 'ctx-date', onclick: function () { ctxGo('date'); } },
+          [el('span', { className: 'ico', text: '▦' }), el('span', { text: t('ctxDate') })])
+      ]));
+      items.push(ctxSep());
+    }
+    items.push(ctxItem('✓', task.isDone ? t('ctxUndone') : t('ctxDone'),
+      ctxAct(function () { return toggleDone(task, !task.isDone); }), { disabled: archived }));
+    if (typeof PluginAPI.startTracking === 'function' && !task.isDone && !archived) {
+      items.push(ctxItem('▷', t('ctxTrack'), ctxAct(function () { return PluginAPI.startTracking(task.id); })));
+    }
+    items.push(ctxSep());
+    items.push(ctxItem('⧗', t('ctxEstimate'), function () { ctxGo('est'); }, {
+      sub: true, val: task.timeEstimate ? fmtDur(task.timeEstimate) : '',
+      disabled: hasSubs || archived, title: hasSubs ? t('estFromSubs') : null
+    }));
+    items.push(ctxItem('#', t('ctxTags'), function () { ctxGo('tags'); }, { sub: true, disabled: archived }));
+    items.push(ctxItem('⇄', t('ctxProject'), function () { ctxGo('project'); }, {
+      sub: true, disabled: archived, val: state.projects[task.projectId] || ''
+    }));
+    items.push(ctxItem('!', t('ctxPriority'), function () { ctxGo('prio'); }, {
+      sub: true, disabled: archived, val: prioOf(task) ? 'P' + prioOf(task) : ''
+    }));
+    items.push(ctxSep());
+    items.push(ctxItem('◫', t('ctxWeek'), function () { ctxGo('week'); }, {
+      sub: true, val: e ? t('week', { n: weekNum(e.w) }) : t('ctxNotPlanned')
+    }));
+    if (e) items.push(ctxItem('▤', t('ctxCat'), function () { ctxGo('cat'); }, { sub: true, val: catName(catById(e.c)) }));
+    if (!archived) {
+      items.push(ctxItem('↗', t('ctxOpen'), ctxAct(function () { return PluginAPI.selectTask(task.id); })));
+    }
+    items.push(ctxSep());
+    items.push(ctxItem('🗑', ctx.delArmed ? t('ctxDelConfirm') : t('ctxDelete'), function () {
+      if (!ctx.delArmed) { ctx.delArmed = true; renderCtx(); return; }
+      ctxAct(function () { return deleteTaskFully(task); })();
+    }, { cls: 'danger' + (ctx.delArmed ? ' armed' : '') }));
+    return items;
+  }
+
+  function ctxSub(task, view) {
+    var items;
+    if (view === 'date') {
+      items = ctxBack(t('ctxDate'));
+      var input = el('input', { type: 'date', value: task.dueDay || (task.dueWithTime ? dayOf(task.dueWithTime) : state.today) });
+      items.push(el('div', { className: 'ctx-form' }, [
+        input,
+        el('button', { type: 'button', className: 'small primary', text: t('ctxSetDue'),
+          onclick: function () { if (input.value) ctxAct(function () { return setDue(task, input.value); })(); } })
+      ]));
+      if (task.dueDay || task.dueWithTime) {
+        items.push(ctxItem('✕', t('ctxClearDue'), ctxAct(function () { return updateTaskFields(task, { dueDay: null, dueWithTime: null }); })));
+      }
+      return items;
+    }
+    if (view === 'est') {
+      items = ctxBack(t('ctxEstimate'));
+      [0.25, 0.5, 1, 2, 3, 4, 8].forEach(function (h) {
+        items.push(ctxItem(radio(task.timeEstimate === h * HOUR), fmtDur(h * HOUR), ctxAct(function () { return setEstimate(task, h); })));
+      });
+      var custom = el('input', { type: 'number', min: '0', step: '0.25', style: 'width:90px', placeholder: t('h') });
+      var apply = function () {
+        var v = parseFloat(String(custom.value).replace(',', '.'));
+        if (v >= 0) ctxAct(function () { return setEstimate(task, v); })();
+      };
+      custom.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); apply(); } });
+      items.push(el('div', { className: 'ctx-form' }, [
+        el('span', { className: 'muted', text: t('ctxCustom') }), custom,
+        el('button', { type: 'button', className: 'small', text: t('ctxApply'), onclick: apply })
+      ]));
+      items.push(ctxItem('✕', t('ctxNoEst'), ctxAct(function () { return setEstimate(task, 0); })));
+      return items;
+    }
+    if (view === 'tags') {
+      items = ctxBack(t('ctxTags'));
+      var ids = Object.keys(state.tags);
+      if (!ids.length) items.push(el('div', { className: 'ctx-form muted', text: t('noOptions') }));
+      ids.forEach(function (id) {
+        var on = (task.tagIds || []).indexOf(id) !== -1;
+        items.push(ctxItem(on ? '☑' : '☐', '#' + state.tags[id], function () {
+          var next = (task.tagIds || []).filter(function (x) { return x !== id; });
+          if (!on) next.push(id);
+          run(function () { return updateTaskFields(task, { tagIds: next }).then(function () { renderCtx(); }); })();
+        }, { cls: on ? 'on' : '' }));
+      });
+      return items;
+    }
+    if (view === 'project') {
+      items = ctxBack(t('ctxProject'));
+      Object.keys(state.projects).forEach(function (id) {
+        items.push(ctxItem(radio(task.projectId === id), state.projects[id],
+          ctxAct(function () { return task.projectId === id ? null : updateTaskFields(task, { projectId: id }); })));
+      });
+      return items;
+    }
+    if (view === 'prio') {
+      items = ctxBack(t('ctxPriority'));
+      [1, 2, 3].forEach(function (p) {
+        items.push(ctxItem(radio(prioOf(task) === p), 'P' + p,
+          ctxAct(function () { return updateTaskFields(task, { priority: p }); }), { cls: 'prio-' + p }));
+      });
+      items.push(ctxItem(radio(!prioOf(task)), t('ctxNoPrio'), ctxAct(function () { return updateTaskFields(task, { priority: null }); })));
+      return items;
+    }
+    if (view === 'week') {
+      items = ctxBack(t('ctxWeek'));
+      var cur = state.assign[task.id] ? state.assign[task.id].w : null;
+      [['ctxThisWeek', 0], ['ctxNextWeek', 1], ['ctxWeekAfter', 2]].forEach(function (p) {
+        var w = shiftWeek(state.curWeek, p[1]);
+        items.push(ctxItem(radio(cur === w), t(p[0]), ctxAct(function () { return planTasks([task.id], w); }),
+          { val: t('week', { n: weekNum(w) }) }));
+      });
+      if (cur) items.push(ctxItem('✕', t('ctxUnplan'), ctxAct(function () { return planTasks([task.id], null); })));
+      return items;
+    }
+    if (view === 'cat') {
+      items = ctxBack(t('ctxCat'));
+      var cid = catIdOf(task);
+      state.cfg.cats.forEach(function (c) {
+        items.push(ctxItem(radio(cid === c.id), catName(c), ctxAct(function () { return moveToCat(task.id, c.id); })));
+      });
+      return items;
+    }
+    return [];
+  }
+
+  function renderCtx() {
+    if (!ctx) return;
+    var task = state.tasks[ctx.id];
+    if (!task) { closeCtx(); return; }
+    var m = $('ctxMenu');
+    fill(m, ctx.view === 'main' ? ctxMain(task) : ctxSub(task, ctx.view));
+    m.hidden = false;
+    // Keep the menu inside the window.
+    var w = m.offsetWidth, h = m.offsetHeight;
+    var x = Math.max(8, Math.min(ctx.x, window.innerWidth - w - 8));
+    var y = Math.max(8, Math.min(ctx.y, window.innerHeight - h - 8));
+    m.style.left = x + 'px';
+    m.style.top = y + 'px';
+    var first = m.querySelector('button:not(:disabled), input');
+    if (first) first.focus();
+  }
+
+  function ctxKeydown(ev) {
+    if (!ctx) return false;
+    if (ev.key === 'Escape') {
+      if (ctx.view !== 'main') ctxGo('main');
+      else closeCtx();
+      return true;
+    }
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      var btns = Array.prototype.slice.call($('ctxMenu').querySelectorAll('button:not(:disabled)'));
+      var i = btns.indexOf(document.activeElement);
+      var next = ev.key === 'ArrowDown' ? (i + 1) % btns.length : (i - 1 + btns.length) % btns.length;
+      if (btns[next]) btns[next].focus();
+      ev.preventDefault();
+      return true;
+    }
+    return false;
   }
 
   // ---------- page switching ----------
@@ -1861,7 +2193,17 @@
     $('toastUndo').addEventListener('click', function () { if (toastUndoFn) run(toastUndoFn)(); });
     $('toastClose').addEventListener('click', hideToast);
 
-    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && editor) requestCloseEditor(); });
+    document.addEventListener('keydown', function (ev) {
+      if (ctxKeydown(ev)) return;
+      if (ev.key === 'Escape' && editor) requestCloseEditor();
+    });
+    document.addEventListener('mousedown', function (ev) {
+      if (ctx && !$('ctxMenu').contains(ev.target)) closeCtx();
+    }, true);
+    window.addEventListener('resize', function () { if (ctx) renderCtx(); }); // keep the menu inside the window
+    window.addEventListener('scroll', function (ev) {
+      if (ctx && !$('ctxMenu').contains(ev.target)) closeCtx();
+    }, true);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) { scheduleLoad(); checkNav(); } });
 
     var H = PluginAPI.Hooks || {};

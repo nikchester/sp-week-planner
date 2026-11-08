@@ -38,6 +38,8 @@ const shots = [
   ['week-dark', '?page=week&theme=dark', '1400,1100'],
   ['categories-editor', '?page=week&act=cats', '1400,900'],
   ['pool-filter-editor', '?page=plan&act=pooleditor', '1400,900'],
+  ['task-menu', '?page=week&act=ctx&theme=dark', '1400,900'],
+  ['task-menu-priority', '?page=week&act=ctxprio&theme=dark', '1400,900'],
   ['mobile', null, '520,2600'],
   ['empty', '?page=plan&act=empty', '1400,800']
 ];

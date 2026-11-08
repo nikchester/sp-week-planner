@@ -224,6 +224,87 @@ function drag(w, from, to) {
     });
   }
 
+  // ---------- task context menu ----------
+  {
+    const { w, $ } = open('?page=week');
+    await wait(150);
+    const card = (title) => [...$('weekBoard').querySelectorAll('.item')].find((li) => li.textContent.includes(title));
+    const rightClick = (node) => node.dispatchEvent(new w.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 50 }));
+    const item = (label) => [...$('ctxMenu').querySelectorAll('button')]
+      .find((b) => (b.querySelector('.grow') || b).textContent.trim() === label || b.textContent.trim() === label);
+    const task = (id) => w.__tasks.find((x) => x.id === id);
+
+    rightClick(card('Курсовая'));
+    check('right click opens the task menu with the main actions', () => {
+      assert.ok(!$('ctxMenu').hidden);
+      ['Отметить как выполненное', 'Начать отслеживание времени', 'Оценка', 'Переключать метки',
+        'Переместить в другой проект', 'Приоритет', 'Неделя', 'Категория', 'Открыть панель задачи', 'Удалить задачу']
+        .forEach((l) => assert.ok(item(l), 'missing ' + l));
+      assert.ok(card('Курсовая').textContent.includes('P1'), 'priority badge on the card');
+    });
+
+    item('Приоритет').click();
+    item('P3').click();
+    await wait(50);
+    check('priority can be changed', () => {
+      assert.strictEqual(task('t2').priority, 3);
+      assert.ok($('ctxMenu').hidden);
+      assert.ok(card('Курсовая').querySelector('.prio-3'));
+    });
+
+    rightClick(card('Курсовая'));
+    item('Оценка').click();
+    item('2ч').click();
+    await wait(50);
+    check('estimate preset sets the estimate', () => { assert.strictEqual(task('t2').timeEstimate, 2 * 3600e3); });
+
+    rightClick(card('Курсовая'));
+    item('Переключать метки').click();
+    item('#Здоровье').click();
+    await wait(50);
+    check('tag toggle keeps the menu open and updates tags', () => {
+      assert.deepStrictEqual(Array.from(task('t2').tagIds), ['kai', 'health']);
+      assert.ok(!$('ctxMenu').hidden);
+    });
+    w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape' }));
+    check('Esc in a submenu goes back to the main menu', () => { assert.ok(item('Оценка')); });
+    w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape' }));
+    check('second Esc closes the menu', () => { assert.ok($('ctxMenu').hidden); });
+
+    rightClick(card('Курсовая'));
+    [...$('ctxMenu').querySelectorAll('.ctx-date')].find((b) => b.textContent.includes('Сегодня')).click();
+    await wait(50);
+    check('"Today" sets the due day', () => { assert.strictEqual(task('t2').dueDay, '2026-11-08'); });
+
+    rightClick(card('Курсовая'));
+    item('Категория').click();
+    item('Личное').click();
+    await wait(50);
+    check('category can be changed from the menu', () => {
+      assert.strictEqual(JSON.parse(w.__store.t_t2).c, 'personal');
+    });
+
+    card('Курсовая').querySelector('.more-btn').click();
+    check('the ⋯ button opens the same menu', () => { assert.ok(!$('ctxMenu').hidden); });
+    item('Начать отслеживание времени').click();
+    await wait(50);
+    check('start tracking calls the API', () => { assert.strictEqual(w.__tracking, 't2'); });
+
+    rightClick(card('Курсовая'));
+    item('Удалить задачу').click();
+    check('delete asks for a second click', () => {
+      assert.ok(item('Нажмите ещё раз, чтобы удалить'));
+      assert.ok(task('t2'));
+    });
+    item('Нажмите ещё раз, чтобы удалить').click();
+    await wait(50);
+    check('second click deletes the task and its week entry', () => {
+      assert.ok(!task('t2'));
+      assert.strictEqual(w.__store.t_t2, '');
+      assert.ok(!card('Курсовая'));
+    });
+  }
+
   // ---------- migration from 0.3 config ----------
   {
     const { w, $ } = open('?page=week');

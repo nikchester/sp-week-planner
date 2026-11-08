@@ -29,7 +29,7 @@ module.exports = function fakeApiSource() {
   }
   var tasks = [
     T('t1', 'Практическая №1 по дискретной математике: множества и диаграммы Эйлера', { projectId: 'uni', tagIds: ['kai'], timeEstimate: 4 * H, timeSpent: 1.5 * H, dueDay: '2026-11-10', timeSpentOnDay: { '2026-11-03': 1.5 * H } }),
-    T('t2', 'Курсовая: глава 2', { projectId: 'uni', tagIds: ['kai'], timeEstimate: 5 * H, dueDay: '2026-11-13' }),
+    T('t2', 'Курсовая: глава 2', { projectId: 'uni', tagIds: ['kai'], timeEstimate: 5 * H, dueDay: '2026-11-13', priority: 1 }),
     T('t3', 'Код-ревью интеграции мессенджеров', { projectId: 'work', timeEstimate: 3 * H, timeSpent: 3 * H, isDone: true }),
     T('t4', 'Подготовить релиз 2.4', { projectId: 'work', timeEstimate: 6 * H, dueWithTime: new Date(2026, 10, 12, 18, 0).getTime() }),
     T('t5', 'Оповестить ФНС об открытии зарубежного счёта', { dueDay: '2026-11-05' }),
@@ -66,7 +66,9 @@ module.exports = function fakeApiSource() {
     getAllTags: async function () { return [{ id: 'TODAY', title: 'Today' }, { id: 'kai', title: 'КАИ' }, { id: 'health', title: 'Здоровье' }, { id: 'read', title: 'Чтение' }]; },
     addTask: async function (d) { var id = 'n' + tasks.length; tasks.push(T(id, d.title)); return id; },
     updateTask: async function (id, u) { tasks.forEach(function (x) { if (x.id === id) Object.assign(x, u); }); },
-    selectTask: async function () {},
+    selectTask: async function (id) { window.__selected = id; },
+    deleteTask: async function (id) { var i = tasks.findIndex(function (x) { return x.id === id; }); if (i >= 0) tasks.splice(i, 1); },
+    startTracking: async function (id) { window.__tracking = id; },
     registerHook: function () {}, showSnack: function () {}, log: { err: console.error }
   };
   window.addEventListener('load', function () {
@@ -79,6 +81,15 @@ module.exports = function fakeApiSource() {
         rows[0].click(); rows[1].click();
       }
       if (act === 'toast') document.querySelector('#poolList li .actions button').click();
+      if (act === 'ctx' || act === 'ctxprio') {
+        var card = document.querySelector('#weekBoard .bcol:nth-child(2) .item');
+        var r = card.getBoundingClientRect();
+        card.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: r.left + 120, clientY: r.top + 20 }));
+        if (act === 'ctxprio') {
+          var b = Array.prototype.find.call(document.querySelectorAll('#ctxMenu button'), function (x) { return x.textContent.indexOf('Приоритет') === 0 || x.textContent.indexOf('!Приоритет') === 0; });
+          if (b) b.click();
+        }
+      }
     }, 300);
   });
 })();`;
