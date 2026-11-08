@@ -2,6 +2,18 @@
 
 The project is in early development (0.x). Data formats and UI may still change.
 
+## 0.7.0 — 2026-11-08
+
+- **Default limits and own week limits.** The "Categories & default limits" dialog sets the default week limit
+  and default category limits. Every week uses them until you change a limit on the week page.
+- The first limit change on the week page copies all current defaults into that week ("own week limits")
+  and then applies the change. Later default changes do not affect such weeks.
+- The week panel shows "Limits: default" or "own week limits" with a "Use defaults" button.
+- A category added later uses its default limit also in weeks with own limits.
+- Planning cards, the week strip, warnings and the "category limits ≤ week limit" rule use the limits of each week.
+- Own week limits are stored per week under the synced key `wl_<week>`, so edits of different weeks
+  do not overwrite each other during sync.
+
 ## 0.6.0 — 2026-11-08
 
 - Category limits together cannot exceed the week limit.

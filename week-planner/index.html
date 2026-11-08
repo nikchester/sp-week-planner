@@ -328,6 +328,7 @@
 
   var KEY_PREFIX = 't_';
   var CFG_KEY = 'cfg';
+  var WL_PREFIX = 'wl_';
   var NAV_SECRET = 'nav';
   var WEEK_RE = /^\d{4}-W\d{2}$/;
   var HOUR = 3600000;
@@ -352,13 +353,13 @@
       planTitle: 'Weeks {a}–{b}', planHint: 'Click a week to make it the target of the "→" buttons. Drop tasks onto a week.',
       target: 'target', openWeek: 'Open', unsortedN: 'unsorted: {n}',
       weekTotal: 'Week plan {t} /', doneN: 'Done {d}/{n}', spentWeek: 'Tracked this week {t}',
-      catsBtn: 'Categories & limits', add: 'Add', addPh: 'New task for this week (goes to {c})…',
+      catsBtn: 'Categories & default limits', add: 'Add', addPh: 'New task for this week (goes to {c})…',
       stripTitle: 'Other weeks — drop a card here to move it',
       toPrev: '← W{n}', toNext: 'W{n} →', toPrevTitle: 'Move to week {n}', toNextTitle: 'Move to week {n}',
       unplan: 'Unplan', unplanTitle: 'Remove from this week. The task itself stays.',
       estInput: 'estimate', estFromSubs: 'The estimate is the sum of the subtasks',
-      emptyCol: 'Drop tasks here', limitTitle: 'Limit in hours for one week, for all weeks',
-      weekLimitTitle: 'Limit for the whole week, in hours',
+      emptyCol: 'Drop tasks here', limitTitle: 'Default limit in hours per week', limitTitleWeek: 'Limit of this week. Other weeks are not changed.', limitsDefault: 'Limits: default', limitsOwn: 'own week limits', limitsReset: 'Use defaults', limitsResetTitle: 'Delete the own limits of this week and use the defaults again',
+      weekLimitTitle: 'Limit of this week, hours. Other weeks are not changed.',
       over: 'over by {t}', overBanner: 'Limit exceeded', overItem: '{name}: {a} of {b} (+{x})',
       overLine: '⚠ Week {w}, "{name}": {a} of {b}',
       kTitle: 'Kanban · week {n}', kAll: 'All', kDone: 'Done {d} of {t}',
@@ -383,8 +384,8 @@
       ctxUnplan: 'Remove from week', ctxNotPlanned: 'not planned', ctxCat: 'Category', ctxOpen: 'Open task details',
       ctxDelete: 'Delete task', ctxDelConfirm: 'Click again to delete', ctxBack: '← Back', ctxDeleted: 'Task deleted',
       cat_unsorted: 'Unsorted', cat_uni: 'University', cat_career: 'Career', cat_personal: 'Personal',
-      edCats: 'Categories and limits', edCatsHint: 'Categories and limits are the same for every week.',
-      catName: 'Name', catLimit: 'limit, h', addCat: '+ Category', weekLimit: 'Limit for the whole week, hours',
+      edCats: 'Categories and default limits', edCatsHint: 'Categories are the same for every week. Default limits apply to every week except weeks where you set own limits on the week page.',
+      catName: 'Name', catLimit: 'default, h', addCat: '+ Category', weekLimit: 'Default week limit, hours',
       cardSort: 'Card order inside columns', untitled: 'Untitled',
       edPool: 'Unplanned tasks: filter & sort', noFilter: 'no filter', sortBy: 'sort',
       match: 'Show tasks that match', matchAll: 'all conditions', matchAny: 'any condition',
@@ -423,13 +424,13 @@
       planTitle: 'Недели {a}–{b}', planHint: 'Щёлкните по неделе, чтобы кнопки «→» в пуле добавляли задачи на неё. Задачи можно перетаскивать на недели.',
       target: 'цель', openWeek: 'Открыть', unsortedN: 'не разобрано: {n}',
       weekTotal: 'План недели {t} /', doneN: 'Готово {d}/{n}', spentWeek: 'Затрачено за неделю {t}',
-      catsBtn: 'Категории и лимиты', add: 'Добавить', addPh: 'Новая задача на эту неделю (попадёт в «{c}»)…',
+      catsBtn: 'Категории и стандартные лимиты', add: 'Добавить', addPh: 'Новая задача на эту неделю (попадёт в «{c}»)…',
       stripTitle: 'Другие недели — перетащите карточку сюда, чтобы перенести',
       toPrev: '← Нед. {n}', toNext: 'Нед. {n} →', toPrevTitle: 'Перенести на неделю {n}', toNextTitle: 'Перенести на неделю {n}',
       unplan: 'Убрать', unplanTitle: 'Убрать из этой недели. Сама задача останется.',
       estInput: 'оценка', estFromSubs: 'Оценка складывается из подзадач',
-      emptyCol: 'Перетащите задачи сюда', limitTitle: 'Лимит часов на неделю, общий для всех недель',
-      weekLimitTitle: 'Лимит на всю неделю, часов',
+      emptyCol: 'Перетащите задачи сюда', limitTitle: 'Стандартный лимит часов на неделю', limitTitleWeek: 'Лимит этой недели. Изменение не затрагивает другие недели.', limitsDefault: 'Лимиты: стандартные', limitsOwn: 'свои лимиты недели', limitsReset: 'Вернуть стандартные', limitsResetTitle: 'Удалить свои лимиты этой недели и снова использовать стандартные',
+      weekLimitTitle: 'Лимит этой недели, часов. Изменение не затрагивает другие недели.',
       over: 'превышено на {t}', overBanner: 'Превышен лимит', overItem: '{name}: {a} из {b} (+{x})',
       overLine: '⚠ Неделя {w}, «{name}»: {a} из {b}',
       kTitle: 'Канбан · неделя {n}', kAll: 'Все', kDone: 'Готово {d} из {t}',
@@ -454,8 +455,8 @@
       ctxUnplan: 'Убрать из недели', ctxNotPlanned: 'не запланирована', ctxCat: 'Категория', ctxOpen: 'Открыть панель задачи',
       ctxDelete: 'Удалить задачу', ctxDelConfirm: 'Нажмите ещё раз, чтобы удалить', ctxBack: '← Назад', ctxDeleted: 'Задача удалена',
       cat_unsorted: 'Несортированное', cat_uni: 'Университет', cat_career: 'Карьера', cat_personal: 'Личное',
-      edCats: 'Категории и лимиты', edCatsHint: 'Категории и лимиты общие для всех недель.',
-      catName: 'Название', catLimit: 'лимит, ч', addCat: '+ Категория', weekLimit: 'Лимит на всю неделю, часов',
+      edCats: 'Категории и стандартные лимиты', edCatsHint: 'Категории общие для всех недель. Стандартные лимиты получают все недели, кроме тех, где вы задали свои лимиты на вкладке недели.',
+      catName: 'Название', catLimit: 'стандарт, ч', addCat: '+ Категория', weekLimit: 'Стандартный лимит недели, часов',
       cardSort: 'Порядок карточек в колонках', untitled: 'Без названия',
       edPool: 'Незапланированные задачи: фильтр и сортировка', noFilter: 'без фильтра', sortBy: 'сортировка',
       match: 'Показывать задачи, которые подходят под', matchAll: 'все условия', matchAny: 'любое условие',
@@ -566,7 +567,7 @@
   var state = {
     today: null, curWeek: null,
     page: 'plan', week: null, kWeek: null, planStart: null, target: null,
-    assign: {}, tasks: {}, archived: {}, projects: {}, tags: {},
+    assign: {}, tasks: {}, archived: {}, projects: {}, tags: {}, weekLimits: {},
     cfg: defaultCfg(), poolQuery: '', poolSel: {}, kCat: null
   };
   var editor = null;
@@ -948,8 +949,9 @@
     var res = await Promise.all([
       todayDate(), loadAssignments(), PluginAPI.getTasks(),
       PluginAPI.getArchivedTasks().catch(function () { return []; }),
-      PluginAPI.getAllProjects(), PluginAPI.getAllTags(), loadCfg()
+      PluginAPI.getAllProjects(), PluginAPI.getAllTags(), loadCfg(), loadWeekLimits()
     ]);
+    state.weekLimits = res[7];
     state.today = ymd(res[0]);
     var cw = isoWeekKey(res[0]);
     var weekChanged = state.curWeek && state.curWeek !== cw;
@@ -1008,13 +1010,60 @@
     return { tasks: wt, total: hoursOf(wt), cats: cats };
   }
 
+  // ---------- limits: defaults in cfg, own limits per week in "wl_<week>" ----------
+  // A week without own limits follows the defaults. The first edit of a limit inside a week copies
+  // all current defaults into the week, so later default changes do not touch that week.
+  function weekLimitH(w) {
+    var o = state.weekLimits[w];
+    return o ? o.week : state.cfg.weekLimitH;
+  }
+  function catLimitH(w, c) {
+    var o = state.weekLimits[w];
+    return o && Object.prototype.hasOwnProperty.call(o.cats, c.id) ? o.cats[c.id] : c.limitH;
+  }
+  function weekCats(w) {
+    return state.cfg.cats.map(function (c) { return { id: c.id, limitH: catLimitH(w, c) }; });
+  }
+  function parseWeekLimits(v) {
+    if (!v) return null;
+    try {
+      var o = JSON.parse(v);
+      if (!o || typeof o !== 'object') return null;
+      var cats = {};
+      Object.keys(o.cats || {}).forEach(function (k) { cats[k] = posNum(o.cats[k]); });
+      return { week: posNum(o.week), cats: cats };
+    } catch (e) { return null; }
+  }
+  async function loadWeekLimits() {
+    var keys = await PluginAPI.listSyncedDataKeys(WL_PREFIX);
+    var vals = await Promise.all(keys.map(function (k) { return PluginAPI.loadSyncedData(k); }));
+    var map = {};
+    keys.forEach(function (k, i) {
+      var w = k.slice(WL_PREFIX.length);
+      var o = parseWeekLimits(vals[i]);
+      if (o && WEEK_RE.test(w)) map[w] = o;
+    });
+    return map;
+  }
+  function ownLimitsFrom(w) {
+    var cats = {};
+    state.cfg.cats.forEach(function (c) { cats[c.id] = catLimitH(w, c); });
+    return { week: weekLimitH(w), cats: cats };
+  }
+  async function saveWeekLimits(w, o) {
+    if (o) state.weekLimits[w] = o;
+    else delete state.weekLimits[w];
+    render(true);
+    await PluginAPI.persistDataSynced(o ? JSON.stringify(o) : '', WL_PREFIX + w);
+  }
+
   function overLimits(w) {
     var ld = weekLoad(w);
     var out = [];
-    var wl = limMs(state.cfg.weekLimitH);
+    var wl = limMs(weekLimitH(w));
     if (wl && ld.total > wl) out.push({ id: '_week', name: t('week', { n: weekNum(w) }), h: ld.total, lim: wl });
     state.cfg.cats.forEach(function (c) {
-      var l = limMs(c.limitH);
+      var l = limMs(catLimitH(w, c));
       if (l && ld.cats[c.id].h > l) out.push({ id: c.id, name: catName(c), h: ld.cats[c.id].h, lim: l });
     });
     return out;
@@ -1225,47 +1274,58 @@
   }
   function hrs(h) { return fmtDur(h * HOUR); }
 
+  // Inputs in the week page edit the own limits of the shown week, not the defaults.
   function limitInput(catId) {
+    var w = state.week;
     var c = catId === '_week' ? null : catById(catId);
-    var val = c ? c.limitH : state.cfg.weekLimitH;
-    var input = numInput(val, '0.5', c ? t('limitTitle') : t('weekLimitTitle'), async function (v) {
-      var week = state.cfg.weekLimitH;
-      if (catId === '_week') {
-        var sum = catLimitSum(state.cfg.cats);
+    var val = c ? catLimitH(w, c) : weekLimitH(w);
+    var input = numInput(val, '0.5', c ? t('limitTitleWeek') : t('weekLimitTitle'), async function (v) {
+      if ((c ? catLimitH(w, c) : weekLimitH(w)) === v) return;
+      var own = ownLimitsFrom(w);
+      var cats = weekCats(w);
+      if (!c) {
+        var sum = catLimitSum(cats);
         if (v !== null && v < sum) {
           v = sum;
           showToast(t('weekClamped', { t: hrs(sum) }), true, null);
         }
-        state.cfg.weekLimitH = v;
+        own.week = v;
       } else {
-        var target = state.cfg.cats.filter(function (x) { return x.id === catId; })[0];
-        if (!target) return;
-        if (week && v !== null) {
-          var room = Math.max(0, week - catLimitSum(state.cfg.cats, catId));
+        if (own.week && v !== null) {
+          var room = Math.max(0, own.week - catLimitSum(cats, catId));
           if (room <= 0) {
-            showToast(t('catNoRoom', { name: catName(target), w: hrs(week) }), true, null);
+            showToast(t('catNoRoom', { name: catName(c), w: hrs(own.week) }), true, null);
             render(true);
             return;
           }
           if (v > room) {
             v = room;
-            showToast(t('catClamped', { name: catName(target), t: hrs(room), w: hrs(week) }), true, null);
+            showToast(t('catClamped', { name: catName(c), t: hrs(room), w: hrs(own.week) }), true, null);
           }
         }
-        target.limitH = v;
+        own.cats[catId] = v;
       }
-      render(true);
-      await saveCfg();
+      await saveWeekLimits(w, own);
     });
-    if (c && state.cfg.weekLimitH) {
-      input.max = String(Math.max(0, state.cfg.weekLimitH - catLimitSum(state.cfg.cats, catId)));
-    }
+    var wl = weekLimitH(w);
+    if (c && wl) input.max = String(Math.max(0, wl - catLimitSum(weekCats(w), catId)));
     return input;
   }
 
+  function limitsModeEl(w) {
+    if (!state.weekLimits[w]) return el('span', { className: 'muted', text: t('limitsDefault') });
+    return el('span', { className: 'hours' }, [
+      el('span', { className: 'badge', text: t('limitsOwn') }),
+      el('button', {
+        type: 'button', className: 'small', text: t('limitsReset'), title: t('limitsResetTitle'),
+        onclick: run(function () { return saveWeekLimits(w, null); })
+      })
+    ]);
+  }
+
   function allocEl() {
-    var week = state.cfg.weekLimitH;
-    var sum = catLimitSum(state.cfg.cats);
+    var week = weekLimitH(state.week);
+    var sum = catLimitSum(weekCats(state.week));
     if (!week) return null;
     if (sum > week) {
       return el('span', { className: 'bad-text', style: 'font-size:12px', text: '⚠ ' + t('allocOver', { a: hrs(sum), b: hrs(week) }) });
@@ -1371,10 +1431,10 @@
 
   function weekCard(w) {
     var ld = weekLoad(w);
-    var wl = limMs(state.cfg.weekLimitH);
+    var wl = limMs(weekLimitH(w));
     var over = overLimits(w);
     var lines = state.cfg.cats.map(function (c) {
-      var l = limMs(c.limitH);
+      var l = limMs(catLimitH(w, c));
       var h = ld.cats[c.id].h;
       if (c.id === UNSORTED && !ld.cats[c.id].n) return null;
       return el('div', { className: 'catline' + (l && h > l ? ' over' : '') }, [
@@ -1465,7 +1525,7 @@
     }).join('; ') : '';
 
     var ld = weekLoad(w);
-    var wl = limMs(state.cfg.weekLimitH);
+    var wl = limMs(weekLimitH(w));
     var done = ld.tasks.filter(function (x) { return x.isDone; }).length;
     var days = weekDays(w), spent = 0;
     ld.tasks.forEach(function (task) {
@@ -1477,13 +1537,14 @@
       el('span', { className: 'muted', text: t('doneN', { d: done, n: ld.tasks.length }) }),
       el('span', { className: 'muted', text: t('spentWeek', { t: fmtDur(spent) }) }),
       allocEl(),
+      limitsModeEl(w),
       loadBar(ld.total, wl)
     ]);
     $('addInput').placeholder = t('addPh', { c: catName(catById(UNSORTED)) });
 
     fill($('weekBoard'), state.cfg.cats.map(function (c) {
       var items = sortTasks(ld.tasks.filter(function (x) { return catIdOf(x) === c.id; }), state.cfg.cardSort);
-      var h = ld.cats[c.id].h, l = limMs(c.limitH), isOver = !!l && h > l;
+      var h = ld.cats[c.id].h, l = limMs(catLimitH(w, c)), isOver = !!l && h > l;
       var col = el('div', { className: 'bcol' + (isOver ? ' over' : '') }, [
         el('div', { className: 'bcol-head' }, [
           el('span', { className: 'bcol-title', text: catName(c) + ' · ' + items.length }),
@@ -1513,7 +1574,7 @@
           onclick: function () { state.week = key; render(true); }
         }, [
           el('span', { className: 'muted', text: t('week', { n: weekNum(key) }) + (ov.length ? ' ⚠' : '') }),
-          el('b', { text: fmtLim(kl.total, wl) }),
+          el('b', { text: fmtLim(kl.total, limMs(weekLimitH(key))) }),
           el('span', { className: 'muted', text: nTasks(kl.tasks.length) }),
           el('span', { className: 'muted', text: fmtDay(weekMonday(key)) })
         ]);

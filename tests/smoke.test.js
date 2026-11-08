@@ -150,7 +150,7 @@ function drag(w, from, to) {
     await wait(50);
     check('category limit cannot exceed the free hours of the week', () => {
       // Week 30 h, Career 16 h + Personal 6 h → at most 8 h are left for University.
-      assert.strictEqual(JSON.parse(w.__store.cfg).cats.find((c) => c.id === 'uni').limitH, 8);
+      assert.strictEqual(JSON.parse(w.__store['wl_2026-W45']).cats.uni, 8);
       assert.ok($('toastMsg').textContent.includes('Лимит «Университет» уменьшен до 8ч'), $('toastMsg').textContent);
       assert.strictEqual(colByTitle($('weekBoard'), 'Университет').querySelector('.num-input').max, '8');
     });
@@ -168,9 +168,16 @@ function drag(w, from, to) {
     uniLim.dispatchEvent(new w.Event('change'));
     await wait(50);
     check('freed hours can be given to another category', () => {
+      const own = JSON.parse(w.__store['wl_2026-W45']);
+      assert.strictEqual(own.cats.personal, 4);
+      assert.strictEqual(own.cats.uni, 10);
+    });
+
+    check('week edits go to the week only, defaults stay', () => {
       const cats = JSON.parse(w.__store.cfg).cats;
-      assert.strictEqual(cats.find((c) => c.id === 'personal').limitH, 4);
-      assert.strictEqual(cats.find((c) => c.id === 'uni').limitH, 10);
+      assert.strictEqual(cats.find((c) => c.id === 'uni').limitH, 8);
+      assert.strictEqual(cats.find((c) => c.id === 'personal').limitH, 6);
+      assert.ok($('weekPanel').textContent.includes('свои лимиты недели'));
     });
 
     const weekLim = $('weekPanel').querySelector('.num-input');
@@ -178,7 +185,7 @@ function drag(w, from, to) {
     weekLim.dispatchEvent(new w.Event('change'));
     await wait(50);
     check('week limit cannot go below the category limits together', () => {
-      assert.strictEqual(JSON.parse(w.__store.cfg).weekLimitH, 30);
+      assert.strictEqual(JSON.parse(w.__store['wl_2026-W45']).week, 30);
       assert.ok($('toastMsg').textContent.includes('Лимит недели поднят до 30ч'));
     });
 
@@ -190,18 +197,23 @@ function drag(w, from, to) {
       assert.strictEqual($('modal').querySelectorAll('.catrow .danger').length, 3, 'Unsorted cannot be deleted');
     });
     const limInputs = $('modal').querySelectorAll('.catrow input[type=number]');
-    limInputs[3].value = '9'; // Personal 4 → 9: 10 + 16 + 9 = 35 > 30
+    check('the editor edits the defaults', () => {
+      assert.deepStrictEqual([...limInputs].map((i) => i.value), ['', '8', '16', '6']);
+    });
+    limInputs[3].value = '9'; // default Personal 6 → 9: 8 + 16 + 9 = 33 > 30
     limInputs[3].dispatchEvent(new w.Event('input'));
     check('editor blocks saving while category limits exceed the week', () => {
       assert.ok($('edSave').disabled);
-      assert.ok($('edAlloc').textContent.includes('35ч больше лимита недели 30ч'), $('edAlloc').textContent);
+      assert.ok($('edAlloc').textContent.includes('33ч больше лимита недели 30ч'), $('edAlloc').textContent);
     });
-    limInputs[3].value = '4';
+    limInputs[3].value = '6';
     limInputs[3].dispatchEvent(new w.Event('input'));
     check('editor allows saving again when limits fit', () => {
       assert.ok(!$('edSave').disabled);
       assert.ok($('edAlloc').textContent.includes('30ч из 30ч'));
     });
+    limInputs[1].value = '5'; // new default for University
+    limInputs[1].dispatchEvent(new w.Event('input'));
     nameInputs[2].value = 'Работа';
     nameInputs[2].dispatchEvent(new w.Event('input'));
     btn($('modal'), '+ Категория').click();
@@ -215,6 +227,29 @@ function drag(w, from, to) {
       assert.deepStrictEqual(titles, ['Несортированное · 0', 'Университет · 2', 'Работа · 2', 'Личное · 2', 'Здоровье · 0']);
       const cats = JSON.parse(w.__store.cfg).cats;
       assert.strictEqual(cats[0].name, '', 'built-in names stay translatable');
+    });
+
+    const uniLimit = () => colByTitle($('weekBoard'), 'Университет').querySelector('.num-input').value;
+    check('a new default does not change a week with own limits', () => {
+      assert.strictEqual(JSON.parse(w.__store.cfg).cats.find((c) => c.id === 'uni').limitH, 5);
+      assert.strictEqual(uniLimit(), '10');
+    });
+    check('a new category gets its default limit in a week with own limits', () => {
+      assert.strictEqual(colByTitle($('weekBoard'), 'Здоровье').querySelector('.num-input').value, '');
+    });
+
+    $('weekNext').click();
+    check('a week without own limits follows the new default', () => {
+      assert.strictEqual(uniLimit(), '5');
+      assert.ok($('weekPanel').textContent.includes('Лимиты: стандартные'));
+    });
+
+    $('weekPrev').click();
+    btn($('weekPanel'), 'Вернуть стандартные').click();
+    await wait(50);
+    check('"Use defaults" removes the own limits of the week', () => {
+      assert.strictEqual(w.__store['wl_2026-W45'], '');
+      assert.strictEqual(uniLimit(), '5');
     });
   }
 
