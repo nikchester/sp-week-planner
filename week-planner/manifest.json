@@ -1,0 +1,12 @@
+{
+  "id": "week-planner",
+  "name": "Week Planner",
+  "version": "0.3.0",
+  "manifestVersion": 1,
+  "minSupVersion": "20.0.0",
+  "description": "Plan tasks for whole weeks: unplanned pool, custom filtered lists with hour limits.",
+  "hooks": [],
+  "permissions": [],
+  "iFrame": true,
+  "dataSharing": []
+}

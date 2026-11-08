@@ -1,0 +1,14 @@
+{
+  "name": "sp-week-planner",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Super Productivity plugin: plan tasks for whole weeks with filtered lists and hour limits.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --check week-planner/plugin.js && node tests/smoke.test.js",
+    "screenshots": "node tests/screenshots.js"
+  },
+  "devDependencies": {
+    "jsdom": "24.1.3"
+  }
+}
