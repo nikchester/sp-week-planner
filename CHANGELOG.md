@@ -2,6 +2,11 @@
 
 The project is in early development (0.x). Data formats and UI may still change.
 
+## 0.5.1 — 2026-11-08
+
+- Priority looks like in Super Productivity: a digit in a ring, 1 light blue, 2 amber, 3 red.
+  The light theme uses darker shades of the same colors.
+
 ## 0.5.0 — 2026-11-08
 
 - **Task menu:** right-click any task card (or press "⋯" on it) to open a menu like the native task menu of

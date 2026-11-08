@@ -240,11 +240,12 @@ function drag(w, from, to) {
       ['Отметить как выполненное', 'Начать отслеживание времени', 'Оценка', 'Переключать метки',
         'Переместить в другой проект', 'Приоритет', 'Неделя', 'Категория', 'Открыть панель задачи', 'Удалить задачу']
         .forEach((l) => assert.ok(item(l), 'missing ' + l));
-      assert.ok(card('Курсовая').textContent.includes('P1'), 'priority badge on the card');
+      const badge = card('Курсовая').querySelector('.prio');
+      assert.ok(badge && badge.classList.contains('prio-1') && badge.textContent === '1', 'priority badge on the card');
     });
 
     item('Приоритет').click();
-    item('P3').click();
+    item('Приоритет 3').click();
     await wait(50);
     check('priority can be changed', () => {
       assert.strictEqual(task('t2').priority, 3);

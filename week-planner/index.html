@@ -195,13 +195,18 @@
   .ctx-head { padding: 8px 14px 4px; font-weight: 600; }
   .ctx-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 14px; }
   .more-btn { width: 26px; height: 24px; padding: 0; line-height: 20px; font-size: 16px; }
-  .prio { font-weight: 700; }
-  .prio-1 { color: #dc2626; }
-  .prio-2 { color: #ea580c; }
-  .prio-3 { color: #2563eb; }
-  body.dark .prio-1 { color: #f87171; }
-  body.dark .prio-2 { color: #fb923c; }
-  body.dark .prio-3 { color: #60a5fa; }
+  /* Priority looks like in Super Productivity: a digit in a ring; 1 blue, 2 amber, 3 red. */
+  .prio {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 17px; height: 17px; border: 1.5px solid currentColor; border-radius: 50%;
+    font-size: 10px; font-weight: 700; line-height: 1; vertical-align: middle;
+  }
+  .prio-1 { color: #4a7fd8; }
+  .prio-2 { color: #d08a12; }
+  .prio-3 { color: #e0453a; }
+  body.dark .prio-1 { color: #a8c7fa; }
+  body.dark .prio-2 { color: #f6b13b; }
+  body.dark .prio-3 { color: #f2665c; }
 
   /* toast */
   .toast {
@@ -1149,7 +1154,7 @@
   function metaEl(task, extra) {
     var parts = [];
     var prio = prioOf(task);
-    if (prio) parts.push(el('span', { className: 'prio prio-' + prio, text: 'P' + prio }));
+    if (prio) parts.push(prioBadge(prio));
     if (task.projectId && state.projects[task.projectId]) parts.push(state.projects[task.projectId]);
     (task.tagIds || []).forEach(function (id) { if (id !== TODAY_TAG) parts.push('#' + tagTitle(id)); });
     if (task.parentId) parts.push(t('subtask'));
@@ -1543,6 +1548,10 @@
     return p >= 1 && p <= 3 ? p : null;
   }
 
+  function prioBadge(p) {
+    return el('span', { className: 'prio prio-' + p, text: String(p), title: t('ctxPriority') + ' ' + p });
+  }
+
   function attachCtx(li, task, holder) {
     li.addEventListener('contextmenu', function (ev) {
       ev.preventDefault();
@@ -1592,8 +1601,10 @@
       disabled: opts.disabled ? 'disabled' : null, title: opts.title || null, onclick: onClick
     }, [
       el('span', { className: 'ico', text: ico }),
+      opts.lead || null,
       el('span', { className: 'grow', text: label }),
       opts.val ? el('span', { className: 'val', text: opts.val }) : null,
+      opts.valNode || null,
       opts.sub ? el('span', { className: 'val', text: '▸' }) : null
     ]);
   }
@@ -1666,7 +1677,7 @@
       sub: true, disabled: archived, val: state.projects[task.projectId] || ''
     }));
     items.push(ctxItem('!', t('ctxPriority'), function () { ctxGo('prio'); }, {
-      sub: true, disabled: archived, val: prioOf(task) ? 'P' + prioOf(task) : ''
+      sub: true, disabled: archived, valNode: prioOf(task) ? prioBadge(prioOf(task)) : null
     }));
     items.push(ctxSep());
     items.push(ctxItem('◫', t('ctxWeek'), function () { ctxGo('week'); }, {
@@ -1742,8 +1753,8 @@
     if (view === 'prio') {
       items = ctxBack(t('ctxPriority'));
       [1, 2, 3].forEach(function (p) {
-        items.push(ctxItem(radio(prioOf(task) === p), 'P' + p,
-          ctxAct(function () { return updateTaskFields(task, { priority: p }); }), { cls: 'prio-' + p }));
+        items.push(ctxItem(radio(prioOf(task) === p), t('ctxPriority') + ' ' + p,
+          ctxAct(function () { return updateTaskFields(task, { priority: p }); }), { lead: prioBadge(p) }));
       });
       items.push(ctxItem(radio(!prioOf(task)), t('ctxNoPrio'), ctxAct(function () { return updateTaskFields(task, { priority: null }); })));
       return items;
