@@ -2,6 +2,17 @@
 
 The project is in early development (0.x). Data formats and UI may still change.
 
+## 0.12.0 — 2026-11-09
+
+- **Manual order on the kanban.** Drop a card onto another card: it goes before or after it
+  (upper or lower half of the card). A line shows the place while dragging.
+- The first manual move switches the column to the new sort key "Manual order (drag)". The column filter stays.
+  The pencil editor offers this key only for kanban columns and can switch the column back.
+- A drop on the free space of the own column moves the card to the end. A drop on the free space
+  of another column only changes the status, as before.
+- A card that comes to a column with manual order without a drop on a card goes to the end of it.
+- The position is stored in the task entry as `o` (position) and `os` (kanban column), synced like the rest of the entry.
+
 ## 0.11.0 — 2026-11-09
 
 - **Filter & sort for every board column.** A pencil button right of the column title opens the editor

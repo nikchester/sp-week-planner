@@ -1,7 +1,7 @@
 {
   "id": "week-planner",
   "name": "Week Planner",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "manifestVersion": 1,
   "minSupVersion": "20.0.0",
   "description": "Plan tasks for whole weeks: planning pool, weekly categories with hour limits, and a weekly kanban board.",

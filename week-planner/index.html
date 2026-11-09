@@ -180,6 +180,8 @@
   .edit-btn.on { opacity: 1; color: var(--accent); }
   .bcol .bar { margin: 0 6px 10px; flex-basis: auto; }
   .bcol .item { margin-bottom: 6px; }
+  .bcol .item.ins-before { box-shadow: 0 -3px 0 var(--accent); }
+  .bcol .item.ins-after { box-shadow: 0 3px 0 var(--accent); }
 
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { display: flex; flex-direction: column; align-items: center; min-width: 84px; padding: 6px 8px; }
@@ -466,6 +468,9 @@
       f_timeEstimate: 'Estimate', f_timeSpent: 'Time spent', f_remaining: 'Estimate left',
       f_isDone: 'Done', f_isSubtask: 'Is subtask', f_hasSubtasks: 'Has subtasks', f_subtaskCount: 'Subtask count',
       f_due: 'Due (day or time)', f_dueDay: 'Due day', f_dueWithTime: 'Due time', f_remindAt: 'Reminder',
+      f_manual: 'Manual order (drag)',
+      manualHint: 'Drag a card onto another card to change the order. The column then switches to the manual order.',
+      manualOn: 'Column «{name}» now uses the manual order. The pencil next to the title changes the sort.',
       f_created: 'Created', f_updated: 'Updated', f_doneOn: 'Done on', f_isRecurring: 'Recurring',
       f_hasIssue: 'Linked issue', f_issueType: 'Issue type', f_issueId: 'Issue ID', f_issuePoints: 'Issue points',
       f_attachments: 'Attachment count', f_extra: 'Field: {k}',
@@ -550,6 +555,9 @@
       f_timeEstimate: 'Оценка', f_timeSpent: 'Затрачено', f_remaining: 'Осталось по оценке',
       f_isDone: 'Выполнена', f_isSubtask: 'Подзадача', f_hasSubtasks: 'Есть подзадачи', f_subtaskCount: 'Число подзадач',
       f_due: 'Срок (день или время)', f_dueDay: 'Срок: день', f_dueWithTime: 'Срок: время', f_remindAt: 'Напоминание',
+      f_manual: 'Ручной порядок (перетаскивание)',
+      manualHint: 'Перетащите карточку на другую карточку, чтобы изменить порядок. Колонка перейдёт на ручной порядок.',
+      manualOn: 'Колонка «{name}» теперь в ручном порядке. Карандаш у заголовка меняет сортировку.',
       f_created: 'Создана', f_updated: 'Изменена', f_doneOn: 'Дата выполнения', f_isRecurring: 'Повторяющаяся',
       f_hasIssue: 'Связана с трекером', f_issueType: 'Тип трекера', f_issueId: 'ID в трекере', f_issuePoints: 'Story points',
       f_attachments: 'Число вложений', f_extra: 'Поле: {k}',
@@ -726,8 +734,16 @@
         val: type === 'date' ? function (x) { return dateVal(x[k]); } : function (x) { return x[k] === undefined ? null : x[k]; }
       });
     });
+    // Manual order of kanban cards. Group 'order' is not listed in the common field menus.
+    fields.push({ id: MANUAL, type: 'num', group: 'order', label: t('f_manual'), val: manualPos });
     fieldMap = {};
     fields.forEach(function (f) { fieldMap[f.id] = f; });
+  }
+
+  var MANUAL = 'manual';
+  function manualPos(task) {
+    var e = state.assign[task.id];
+    return e && e.o !== undefined && e.os === statusOf(task) ? e.o : null;
   }
 
   function evalCond(task, c) {
@@ -977,11 +993,22 @@
     if (WEEK_RE.test(v)) return { w: v, c: UNSORTED, s: 'todo' }; // format of 0.1–0.3
     try {
       var o = JSON.parse(v);
-      if (o && WEEK_RE.test(o.w)) return { w: o.w, c: o.c ? String(o.c) : UNSORTED, s: o.s === 'doing' ? 'doing' : 'todo' };
+      if (o && WEEK_RE.test(o.w)) {
+        return withEntry({ w: o.w, c: o.c ? String(o.c) : UNSORTED, s: o.s === 'doing' ? 'doing' : 'todo' },
+          typeof o.o === 'number' && isFinite(o.o) && STATUSES.indexOf(o.os) !== -1 ? { o: o.o, os: o.os } : {});
+      }
     } catch (e) { /* ignore broken entries */ }
     return null;
   }
-  function serializeEntry(e) { return e ? JSON.stringify({ w: e.w, c: e.c, s: e.s }) : ''; }
+  // o: manual position in the kanban column os. It counts only while the task stays in that column.
+  function withEntry(old, patch) {
+    var e = { w: old.w, c: old.c, s: old.s };
+    if (old.o !== undefined) { e.o = old.o; e.os = old.os; }
+    Object.keys(patch || {}).forEach(function (k) { e[k] = patch[k]; });
+    if (e.o === undefined || e.o === null) { delete e.o; delete e.os; }
+    return e;
+  }
+  function serializeEntry(e) { return e ? JSON.stringify(withEntry(e)) : ''; }
 
   async function loadAssignments() {
     var keys = await PluginAPI.listSyncedDataKeys(KEY_PREFIX);
@@ -1341,7 +1368,7 @@
     var prev = {}, weeks = {};
     ids.forEach(function (id) {
       var old = state.assign[id];
-      prev[id] = old ? { w: old.w, c: old.c, s: old.s } : null;
+      prev[id] = old ? withEntry(old) : null;
       if (old) weeks[old.w] = true;
       if (changes[id]) weeks[changes[id].w] = true;
     });
@@ -1379,7 +1406,7 @@
   function moveToCat(id, catId) {
     var old = state.assign[id];
     if (!old || catById(old.c).id === catId) return Promise.resolve();
-    return changeEntries(_obj(id, { w: old.w, c: catId, s: old.s }), null, false);
+    return changeEntries(_obj(id, withEntry(old, { c: catId })), null, false);
   }
 
   async function setStatus(task, s) {
@@ -1394,7 +1421,7 @@
     }
     var wasDone = task.isDone;
     task.isDone = false;
-    await applyEntries(_obj(task.id, { w: old.w, c: old.c, s: s }));
+    await applyEntries(_obj(task.id, withEntry(old, { s: s })));
     if (wasDone) await PluginAPI.updateTask(task.id, { isDone: false });
   }
 
@@ -1446,7 +1473,7 @@
       ev.stopPropagation();
       node.classList.remove('drop');
       var s = ev.dataTransfer.getData('text/plain');
-      if (s && s.indexOf('wp:') === 0) run(onDrop)(s.slice(3));
+      if (s && s.indexOf('wp:') === 0) run(onDrop)(s.slice(3), ev);
     });
   }
 
@@ -1540,7 +1567,7 @@
     var parent = task.parentId && state.tasks[task.parentId];
     var prio = prioOf(task);
     var side = [prio ? prioBadge(prio) : null, estBlock(task, o.onEst), dueBlock(task)].filter(Boolean);
-    var li = el('li', { className: 'item' + (task.isDone ? ' done' : '') + (o.cls ? ' ' + o.cls : '') }, [
+    var li = el('li', { className: 'item' + (task.isDone ? ' done' : '') + (o.cls ? ' ' + o.cls : ''), 'data-id': task.id }, [
       o.check ? doneBox(task) : null,
       el('div', { className: 'body' }, [
         parent ? el('div', { className: 'parent', text: parent.title }) : null,
@@ -1935,13 +1962,69 @@
         colHead('k:' + s, t('st_' + s), all, view, el('span', { className: 'muted', text: fmtDur(hoursOf(all)) })),
         list.length ? el('ul', { className: 'list' }, list.map(kanbanCard)) : el('p', { className: 'muted empty', text: t('emptyCol') })
       ]);
-      makeDropTarget(col, function (id) {
-        var task = state.tasks[id];
-        if (!task || !state.assign[id] || state.assign[id].w !== w) return Promise.resolve();
-        return setStatus(task, s);
-      });
+      makeDropTarget(col, function (id, ev) { return dropOnKanban(id, s, w, ev); });
+      col.addEventListener('dragover', function (ev) { markInsert(col, dropSpot(ev)); });
+      col.addEventListener('dragleave', function (ev) { if (!col.contains(ev.relatedTarget)) markInsert(col, null); });
+      col.addEventListener('drop', function () { markInsert(col, null); }, true);
       return col;
     }));
+  }
+
+  // The card under the pointer and the side of it: { li, id, after } or null.
+  function dropSpot(ev) {
+    var li = ev && ev.target && ev.target.closest ? ev.target.closest('li.item[data-id]') : null;
+    if (!li) return null;
+    var r = li.getBoundingClientRect();
+    return { li: li, id: li.getAttribute('data-id'), after: r.height > 0 && ev.clientY > r.top + r.height / 2 };
+  }
+  function markInsert(col, spot) {
+    Array.prototype.forEach.call(col.querySelectorAll('.ins-before, .ins-after'), function (n) {
+      n.classList.remove('ins-before', 'ins-after');
+    });
+    if (spot) spot.li.classList.add(spot.after ? 'ins-after' : 'ins-before');
+  }
+
+  // Drop on a card puts the task before or after it and turns on the manual order of the column.
+  // Drop on the free space of the own column puts the task to the end. Drop on the free space
+  // of another column only changes the status.
+  async function dropOnKanban(id, s, w, ev) {
+    var task = state.tasks[id];
+    if (!task || !state.assign[id] || state.assign[id].w !== w) return;
+    var spot = dropSpot(ev);
+    var moved = statusOf(task) !== s;
+    if (moved) await setStatus(task, s);
+    if (spot && spot.id === id) return;
+    if (moved && !spot) return;
+    await reorderKanban(id, s, w, spot);
+  }
+
+  // Numbers all cards of the column 1..n in the new order, hidden and other categories included.
+  async function reorderKanban(id, s, w, spot) {
+    var key = 'k:' + s;
+    var col = weekLoad(w).tasks.filter(function (x) { return statusOf(x) === s && x.id !== id; });
+    var order = sortTasks(col, colView(key).sort).map(function (x) { return x.id; });
+    var at = spot ? order.indexOf(spot.id) : -1;
+    order.splice(at === -1 ? order.length : at + (spot.after ? 1 : 0), 0, id);
+    var changes = {};
+    order.forEach(function (tid, i) {
+      var e = state.assign[tid];
+      if (e && (e.o !== i + 1 || e.os !== s)) changes[tid] = withEntry(e, { o: i + 1, os: s });
+    });
+    var switched = useManualOrder(key);
+    await applyEntries(changes);
+    if (switched) {
+      showToast(t('manualOn', { name: t('st_' + s) }), false, null);
+      await saveCfg();
+    }
+  }
+
+  // Makes the manual order the sort of the kanban column. The column filter stays.
+  function useManualOrder(key) {
+    var views = state.cfg.colViews = state.cfg.colViews || {};
+    var v = views[key];
+    if (v && v.sort && v.sort[0] && v.sort[0].field === MANUAL) return false;
+    views[key] = { match: v ? v.match : 'all', conds: v ? v.conds : [], sort: [{ field: MANUAL, dir: 'asc' }] };
+    return true;
   }
 
   // ---------- task context menu ----------
@@ -2308,9 +2391,11 @@
     return '';
   }
 
-  function fieldSelect(current, onChange) {
+  // withManual: the kanban column editor also offers the manual order.
+  function fieldSelect(current, onChange, withManual) {
     var s = el('select');
     if (!fieldMap[current]) s.appendChild(el('option', { value: current, text: current }));
+    if (withManual || current === MANUAL) s.appendChild(el('option', { value: MANUAL, text: t('f_manual') }));
     GROUPS.forEach(function (g) {
       var inGroup = fields.filter(function (f) { return f.group === g; });
       if (!inGroup.length) return;
@@ -2415,7 +2500,7 @@
     renderEditor();
   }
 
-  function sortRows(sort) {
+  function sortRows(sort, withManual) {
     var rows = sort.length ? sort.map(function (s, i) {
       var dirSel = el('select');
       dirSel.appendChild(el('option', { value: 'asc', text: t('asc') }));
@@ -2424,7 +2509,7 @@
       dirSel.addEventListener('change', function () { s.dir = dirSel.value; });
       return el('div', { className: 'sortrow' }, [
         el('span', { className: 'muted', text: (i + 1) + '.' }),
-        fieldSelect(s.field, function (id) { s.field = id; }),
+        fieldSelect(s.field, function (id) { s.field = id; }, withManual),
         dirSel,
         el('button', { type: 'button', className: 'icon', text: '↑', 'aria-label': '↑', onclick: function () { moveIn(sort, i, -1); } }),
         el('button', { type: 'button', className: 'icon', text: '↓', 'aria-label': '↓', onclick: function () { moveIn(sort, i, 1); } }),
@@ -2502,7 +2587,9 @@
           type: 'button', className: 'small', text: t('addCond'),
           onclick: function () { d.conds.push({ field: 'tags', op: 'any', value: [] }); renderEditor(); }
         })])));
-      nodes.push(el('div', { className: 'field' }, [el('label', { text: t('sort') })].concat(sortRows(d.sort))));
+      var isKanban = editor.kind === 'col' && editor.col.key.indexOf('k:') === 0;
+      nodes.push(el('div', { className: 'field' }, [el('label', { text: t('sort') })].concat(sortRows(d.sort, isKanban))));
+      if (isKanban) nodes.push(el('p', { className: 'muted', text: t('manualHint') }));
       nodes.push(el('div', { id: 'edPreview', className: 'muted' }));
     } else {
       nodes.push(el('h2', { text: t('edCats') }));

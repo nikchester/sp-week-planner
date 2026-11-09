@@ -455,6 +455,54 @@ function drag(w, from, to) {
     });
   }
 
+  // ---------- kanban: manual order ----------
+  {
+    const { w, $ } = open('?page=kanban');
+    await wait(200);
+    const col = (start) => colByTitle($('kBoard'), start);
+    const card = (start, title) => [...col(start).querySelectorAll('li.item')]
+      .find((li) => li.querySelector('.name').textContent.startsWith(title));
+    const entry = (id) => JSON.parse(w.__store['t_' + id]);
+    const before = names(col('Сделать'));
+    drag(w, card('Сделать', 'Спортзал'), card('Сделать', before[0]));
+    await wait(50);
+    check('drop on a card puts the task before it and turns on the manual order', () => {
+      const n = names(col('Сделать'));
+      assert.strictEqual(n[0], 'Спортзал');
+      assert.strictEqual(n.length, before.length);
+      assert.deepStrictEqual(JSON.parse(w.__store.cfg).colViews['k:todo'].sort, [{ field: 'manual', dir: 'asc' }]);
+      assert.deepStrictEqual([entry('t6').o, entry('t6').os], [1, 'todo']);
+      assert.ok($('toast').textContent.includes('ручном порядке'));
+    });
+    drag(w, card('Сделать', 'Спортзал'), col('Сделать').querySelector('.bcol-head'));
+    await wait(50);
+    check('drop on the free space of the own column puts the task to the end', () => {
+      const n = names(col('Сделать'));
+      assert.strictEqual(n[n.length - 1], 'Спортзал');
+    });
+    drag(w, card('В работе', 'Подготовить релиз'), card('Сделать', 'Спортзал'));
+    await wait(50);
+    check('drop on a card of another column changes the status and the position', () => {
+      const n = names(col('Сделать'));
+      assert.deepStrictEqual(n.slice(-2), ['Подготовить релиз 2.4', 'Спортзал']);
+      assert.ok(!names(col('В работе')).includes('Подготовить релиз 2.4'));
+      assert.deepStrictEqual([entry('t4').s, entry('t4').os], ['todo', 'todo']);
+    });
+    drag(w, card('Сделать', 'Подготовить релиз'), col('В работе').querySelector('.bcol-head'));
+    await wait(50);
+    check('drop on the free space of another column only changes the status', () => {
+      assert.ok(names(col('В работе')).includes('Подготовить релиз 2.4'));
+      assert.ok(!JSON.parse(w.__store.cfg).colViews['k:doing']);
+      assert.strictEqual(entry('t4').os, 'todo', 'the old position is kept but does not count in another column');
+    });
+    col('Сделать').querySelector('.edit-btn').click();
+    check('the kanban column editor offers the manual order', () => {
+      const sel = $('modal').querySelectorAll('.sortrow')[1].querySelector('select');
+      assert.strictEqual(sel.value, 'manual');
+      assert.ok($('modal').textContent.includes('Перетащите карточку'));
+    });
+  }
+
   // ---------- #in-progress tag set in Super Productivity ----------
   {
     const { w, $ } = open('?page=kanban&ptag=1');
