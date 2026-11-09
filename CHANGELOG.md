@@ -2,6 +2,14 @@
 
 The project is in early development (0.x). Data formats and UI may still change.
 
+## 0.11.0 — 2026-11-09
+
+- **Filter & sort for every board column.** A pencil button right of the column title opens the editor
+  on the week page (per category) and on the kanban (per status). The editor is the same as for the unplanned pool.
+- The filter only hides cards: hours and limits count all tasks of the column. The header shows "hidden N".
+- A column without its own settings uses the common card order. "Reset" returns a column to it.
+- Stored in `cfg.colViews` with keys `w:<category id>` and `k:<status>`; the settings apply to every week.
+
 ## 0.10.0 — 2026-11-09
 
 - **Cards look like the Super Productivity board**: round checkbox box, larger title, parent task above a subtask,

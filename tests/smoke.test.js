@@ -387,6 +387,74 @@ function drag(w, from, to) {
     });
   }
 
+  // ---------- column filter & sort (pencil) ----------
+  {
+    const { w, $ } = open('?page=week');
+    await wait(150);
+    const career = () => colByTitle($('weekBoard'), 'Карьера');
+    check('every week column has a pencil button', () => {
+      assert.strictEqual($('weekBoard').querySelectorAll('.bcol-head .edit-btn').length, 4);
+    });
+    career().querySelector('.edit-btn').click();
+    check('the pencil opens the column editor', () => {
+      assert.ok(!$('overlay').hidden);
+      assert.ok($('modal').textContent.includes('Колонка «Карьера»: фильтр и сортировка'));
+      assert.ok($('modal').textContent.includes('Сейчас показано: 2 из 2'));
+    });
+    btn($('modal'), '+ Условие').click();
+    const fieldSel = $('modal').querySelector('.cond select');
+    fieldSel.value = 'isDone';
+    fieldSel.dispatchEvent(new w.Event('change'));
+    const opSel = $('modal').querySelectorAll('.cond select')[1];
+    opSel.value = 'isFalse';
+    opSel.dispatchEvent(new w.Event('change'));
+    check('the preview counts the shown cards', () => {
+      assert.ok($('modal').textContent.includes('Сейчас показано: 1 из 2'), $('modal').textContent);
+    });
+    btn($('modal'), 'Сохранить').click();
+    await wait(50);
+    check('the column filter hides cards, the header shows the hidden count, hours stay', () => {
+      assert.deepStrictEqual(names(career()), ['Подготовить релиз 2.4']);
+      assert.ok(career().querySelector('.bcol-head').textContent.includes('скрыто 1'));
+      assert.ok(career().querySelector('.edit-btn').classList.contains('on'));
+      assert.ok(career().querySelector('.bcol-title').textContent === 'Карьера · 2');
+      assert.ok(career().querySelector('.hours').textContent.startsWith('9ч'));
+      const v = JSON.parse(w.__store.cfg).colViews['w:career'];
+      assert.deepStrictEqual(v.conds.map((c) => [c.field, c.op]), [['isDone', 'isFalse']]);
+      assert.strictEqual(v.sort, null);
+    });
+    career().querySelector('.edit-btn').click();
+    btn($('modal'), 'Сбросить').click();
+    btn($('modal'), 'Сохранить').click();
+    await wait(50);
+    check('"Reset" returns the column to the common view', () => {
+      assert.strictEqual(names(career()).length, 2);
+      assert.ok(!JSON.parse(w.__store.cfg).colViews['w:career']);
+    });
+  }
+  {
+    const { w, $ } = open('?page=kanban');
+    await wait(200);
+    const todo = () => colByTitle($('kBoard'), 'Сделать');
+    todo().querySelector('.edit-btn').click();
+    check('kanban columns have the pencil too', () => {
+      assert.ok($('modal').textContent.includes('Колонка «Сделать»: фильтр и сортировка'));
+    });
+    const firstSort = $('modal').querySelectorAll('.sortrow')[1]; // row 0 is "match all / any"
+    const [field, dir] = firstSort.querySelectorAll('select');
+    field.value = 'title';
+    field.dispatchEvent(new w.Event('change'));
+    dir.value = 'desc';
+    dir.dispatchEvent(new w.Event('change'));
+    btn($('modal'), 'Сохранить').click();
+    await wait(50);
+    check('own sort of a kanban column is applied and stored', () => {
+      const n = names(todo());
+      assert.deepStrictEqual(n, n.slice().sort((a, b) => b.localeCompare(a, 'ru')));
+      assert.strictEqual(JSON.parse(w.__store.cfg).colViews['k:todo'].sort[0].field, 'title');
+    });
+  }
+
   // ---------- #in-progress tag set in Super Productivity ----------
   {
     const { w, $ } = open('?page=kanban&ptag=1');

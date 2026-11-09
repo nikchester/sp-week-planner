@@ -170,6 +170,14 @@
   .bcol.over { border-color: var(--bad); }
   .bcol-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; padding: 0 6px; margin-bottom: 10px; color: var(--soft); }
   .bcol-title { font-weight: 600; font-size: 15px; color: var(--muted); }
+  .bcol-name { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+  .edit-btn {
+    display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0;
+    border: 0; border-radius: 50%; background: transparent; color: var(--muted); opacity: .7;
+  }
+  .edit-btn svg { width: 16px; height: 16px; fill: currentColor; }
+  .edit-btn:hover:not(:disabled) { opacity: 1; color: var(--text); background: var(--accent-soft); }
+  .edit-btn.on { opacity: 1; color: var(--accent); }
   .bcol .bar { margin: 0 6px 10px; flex-basis: auto; }
   .bcol .item { margin-bottom: 6px; }
 
@@ -441,6 +449,10 @@
       edCats: 'Categories and default limits', edCatsHint: 'Categories are the same for every week. Default limits apply to every week except weeks where you set own limits on the week page.',
       catName: 'Name', catLimit: 'default, h', addCat: '+ Category', weekLimit: 'Default week limit, hours',
       cardSort: 'Card order inside columns', untitled: 'Untitled',
+      colEdit: 'Filter & sort of this column', edCol: 'Column «{name}»: filter & sort',
+      edColHint: 'The filter only hides cards. Hours and limits count all tasks of the column.',
+      colHidden: 'hidden {n}', colHiddenTitle: 'Hidden by the column filter. They still count toward the hours.',
+      previewCol: 'Shown now: {a} of {n}', colReset: 'Reset to default',
       edPool: 'Unplanned tasks: filter & sort', noFilter: 'no filter', sortBy: 'sort',
       match: 'Show tasks that match', matchAll: 'all conditions', matchAny: 'any condition',
       conds: 'Conditions', addCond: '+ Condition', sort: 'Sorting', addSort: '+ Sort key',
@@ -521,6 +533,10 @@
       edCats: 'Категории и стандартные лимиты', edCatsHint: 'Категории общие для всех недель. Стандартные лимиты получают все недели, кроме тех, где вы задали свои лимиты на вкладке недели.',
       catName: 'Название', catLimit: 'стандарт, ч', addCat: '+ Категория', weekLimit: 'Стандартный лимит недели, часов',
       cardSort: 'Порядок карточек в колонках', untitled: 'Без названия',
+      colEdit: 'Фильтр и сортировка колонки', edCol: 'Колонка «{name}»: фильтр и сортировка',
+      edColHint: 'Фильтр только скрывает карточки. Часы и лимиты учитывают все задачи колонки.',
+      colHidden: 'скрыто {n}', colHiddenTitle: 'Скрыты фильтром колонки. Часы и лимиты их учитывают.',
+      previewCol: 'Сейчас показано: {a} из {n}', colReset: 'Сбросить',
       edPool: 'Незапланированные задачи: фильтр и сортировка', noFilter: 'без фильтра', sortBy: 'сортировка',
       match: 'Показывать задачи, которые подходят под', matchAll: 'все условия', matchAny: 'любое условие',
       conds: 'Условия', addCond: '+ Условие', sort: 'Сортировка', addSort: '+ Ключ сортировки',
@@ -855,6 +871,50 @@
     return Array.isArray(s) ? s.filter(function (x) { return x && x.field; }) : d;
   }
 
+  // Own filter and sort of a board column. Keys: 'w:<category id>' (week page), 'k:<status>' (kanban).
+  function normColViews(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    Object.keys(raw).forEach(function (k) {
+      var v = raw[k];
+      if (!v || typeof v !== 'object') return;
+      out[k] = {
+        match: v.match === 'any' ? 'any' : 'all',
+        conds: Array.isArray(v.conds) ? v.conds.filter(function (c) { return c && c.field && c.op; }) : [],
+        sort: normSort(v.sort, null)
+      };
+    });
+    return out;
+  }
+  // A stored sort of null means "use the common card order".
+  function colView(key) {
+    var v = (state.cfg.colViews || {})[key];
+    return { match: v ? v.match : 'all', conds: v ? v.conds : [], sort: v && v.sort ? v.sort : state.cfg.cardSort, own: !!v };
+  }
+  // Applies the column view: returns the shown cards and the number of hidden ones.
+  function colItems(key, tasks) {
+    var v = colView(key);
+    var shown = sortTasks(tasks.filter(function (x) { return matchView(x, v); }), v.sort);
+    return { shown: shown, hidden: tasks.length - shown.length, own: v.own };
+  }
+  var PENCIL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 ' +
+    '7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
+  function colHead(key, name, tasks, view, right) {
+    var btn = el('button', {
+      type: 'button', className: 'edit-btn' + (view.own ? ' on' : ''), title: t('colEdit'), 'aria-label': t('colEdit'),
+      onclick: stop(function () { openEditor('col', { key: key, name: name, tasks: tasks }); })
+    });
+    btn.innerHTML = PENCIL;
+    return el('div', { className: 'bcol-head' }, [
+      el('span', { className: 'bcol-name' }, [
+        el('span', { className: 'bcol-title', text: name + ' · ' + tasks.length }),
+        btn,
+        view.hidden ? el('span', { className: 'muted', title: t('colHiddenTitle'), text: t('colHidden', { n: view.hidden }) }) : null
+      ]),
+      right
+    ]);
+  }
+
   function normCfg(raw) {
     var d = defaultCfg();
     if (!raw || typeof raw !== 'object') return d;
@@ -870,7 +930,8 @@
       weekLimitH: posNum(raw.weekLimitH),
       cardSort: normSort(raw.cardSort, d.cardSort),
       poolPreset: typeof raw.poolPreset === 'string' ? raw.poolPreset : null,
-      progressTagInit: raw.progressTagInit === true
+      progressTagInit: raw.progressTagInit === true,
+      colViews: normColViews(raw.colViews)
     };
     if (Array.isArray(raw.cats)) {
       cfg.cats = raw.cats.filter(function (c) { return c && c.id; }).map(function (c) {
@@ -1790,13 +1851,13 @@
     $('addInput').placeholder = t('addPh', { c: catName(catById(UNSORTED)) });
 
     fill($('weekBoard'), state.cfg.cats.map(function (c) {
-      var items = sortTasks(ld.tasks.filter(function (x) { return catIdOf(x) === c.id; }), state.cfg.cardSort);
+      var all = ld.tasks.filter(function (x) { return catIdOf(x) === c.id; });
+      var view = colItems('w:' + c.id, all);
+      var items = view.shown;
       var h = ld.cats[c.id].h, l = limMs(catLimitH(w, c)), isOver = !!l && h > l;
       var col = el('div', { className: 'bcol' + (isOver ? ' over' : '') }, [
-        el('div', { className: 'bcol-head' }, [
-          el('span', { className: 'bcol-title', text: catName(c) + ' · ' + items.length }),
-          el('span', { className: 'hours' + (isOver ? ' over' : '') }, [fmtDur(h) + ' /', limitInput(c.id), t('h')])
-        ]),
+        colHead('w:' + c.id, catName(c), all, view,
+          el('span', { className: 'hours' + (isOver ? ' over' : '') }, [fmtDur(h) + ' /', limitInput(c.id), t('h')])),
         l ? loadBar(h, l) : null,
         isOver ? el('div', { className: 'muted bad-text', style: 'margin-bottom:6px', text: '⚠ ' + t('over', { t: fmtDur(h - l) }) }) : null,
         items.length ? el('ul', { className: 'list' }, items.map(weekCardTask)) : el('p', { className: 'muted empty', text: t('emptyCol') })
@@ -1867,12 +1928,11 @@
     ]);
 
     fill($('kBoard'), STATUSES.map(function (s) {
-      var list = sortTasks(items.filter(function (x) { return statusOf(x) === s; }), state.cfg.cardSort);
+      var all = items.filter(function (x) { return statusOf(x) === s; });
+      var view = colItems('k:' + s, all);
+      var list = view.shown;
       var col = el('div', { className: 'bcol st-' + s }, [
-        el('div', { className: 'bcol-head' }, [
-          el('span', { className: 'bcol-title', text: t('st_' + s) + ' · ' + list.length }),
-          el('span', { className: 'muted', text: fmtDur(hoursOf(list)) })
-        ]),
+        colHead('k:' + s, t('st_' + s), all, view, el('span', { className: 'muted', text: fmtDur(hoursOf(all)) })),
         list.length ? el('ul', { className: 'list' }, list.map(kanbanCard)) : el('p', { className: 'muted empty', text: t('emptyCol') })
       ]);
       makeDropTarget(col, function (id) {
@@ -2211,11 +2271,15 @@
   }
 
   // ---------- editors ----------
-  function openEditor(kind) {
-    var draft = kind === 'pool'
-      ? JSON.parse(JSON.stringify(activePoolView()))
-      : JSON.parse(JSON.stringify({ cats: state.cfg.cats, weekLimitH: state.cfg.weekLimitH, cardSort: state.cfg.cardSort }));
-    editor = { kind: kind, draft: draft, orig: JSON.stringify(draft), armed: null, discardArmed: false };
+  // col: { key, name, tasks } of the board column, for kind 'col'.
+  function openEditor(kind, col) {
+    var draft;
+    if (kind === 'pool') draft = JSON.parse(JSON.stringify(activePoolView()));
+    else if (kind === 'col') {
+      var v = colView(col.key);
+      draft = JSON.parse(JSON.stringify({ match: v.match, conds: v.conds, sort: v.sort }));
+    } else draft = JSON.parse(JSON.stringify({ cats: state.cfg.cats, weekLimitH: state.cfg.weekLimitH, cardSort: state.cfg.cardSort }));
+    editor = { kind: kind, col: col || null, draft: draft, orig: JSON.stringify(draft), armed: null, discardArmed: false };
     $('overlay').hidden = false;
     renderEditor();
   }
@@ -2376,7 +2440,11 @@
   function updatePreview() {
     var p = $('edPreview');
     if (!p || !editor) return;
-    p.textContent = editor.kind === 'pool' ? t('previewPool', { n: poolTasks(editor.draft).length }) : '';
+    if (editor.kind === 'pool') p.textContent = t('previewPool', { n: poolTasks(editor.draft).length });
+    else if (editor.kind === 'col') {
+      var all = editor.col.tasks;
+      p.textContent = t('previewCol', { a: all.filter(function (x) { return matchView(x, editor.draft); }).length, n: all.length });
+    } else p.textContent = '';
   }
 
   function catRows(d) {
@@ -2413,9 +2481,14 @@
     if (!editor) return;
     var d = editor.draft;
     var nodes = [];
-    if (editor.kind === 'pool') {
-      nodes.push(el('h2', { text: t('edPool') }));
-      if (activePreset()) nodes.push(el('p', { className: 'muted', text: t('edPoolFrom', { p: presetLabel(activePreset().id) }) }));
+    if (editor.kind === 'pool' || editor.kind === 'col') {
+      if (editor.kind === 'pool') {
+        nodes.push(el('h2', { text: t('edPool') }));
+        if (activePreset()) nodes.push(el('p', { className: 'muted', text: t('edPoolFrom', { p: presetLabel(activePreset().id) }) }));
+      } else {
+        nodes.push(el('h2', { text: t('edCol', { name: editor.col.name }) }));
+        nodes.push(el('p', { className: 'muted', text: t('edColHint') }));
+      }
       var matchSel = el('select');
       matchSel.appendChild(el('option', { value: 'all', text: t('matchAll') }));
       matchSel.appendChild(el('option', { value: 'any', text: t('matchAny') }));
@@ -2450,6 +2523,10 @@
     }
     if (editor.discardArmed) nodes.push(el('div', { className: 'notice', role: 'alert', text: t('unsaved') }));
     nodes.push(el('div', { className: 'modal-foot' }, [
+      editor.kind === 'col' ? el('button', {
+        type: 'button', text: t('colReset'),
+        onclick: function () { editor.draft = { match: 'all', conds: [], sort: JSON.parse(JSON.stringify(state.cfg.cardSort)) }; renderEditor(); }
+      }) : null,
       el('span', { className: 'grow' }),
       el('button', { type: 'button', text: editor.discardArmed ? t('discard') : t('cancel'), onclick: requestCloseEditor }),
       el('button', { type: 'button', id: 'edSave', className: 'primary', text: t('save'), onclick: run(saveEditor) })
@@ -2484,6 +2561,12 @@
     if (editor.kind === 'pool') {
       state.cfg.pool = { id: 'pool', match: d.match === 'any' ? 'any' : 'all', conds: d.conds, sort: d.sort };
       state.cfg.poolPreset = null; // the edited filter becomes "My filter"
+    } else if (editor.kind === 'col') {
+      var views = state.cfg.colViews = state.cfg.colViews || {};
+      var sameSort = JSON.stringify(d.sort) === JSON.stringify(state.cfg.cardSort);
+      // A column without conditions and with the common order keeps following the common order.
+      if (!d.conds.length && sameSort) delete views[editor.col.key];
+      else views[editor.col.key] = { match: d.match === 'any' ? 'any' : 'all', conds: d.conds, sort: sameSort ? null : d.sort };
     } else {
       state.cfg.cats = d.cats.map(function (c) {
         var name = (c.name || '').trim();
