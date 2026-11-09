@@ -1,6 +1,6 @@
 {
   "name": "sp-week-planner",
-  "version": "0.8.0",
+  "version": "0.10.0",
   "private": true,
   "description": "Super Productivity plugin: plan tasks for whole weeks with categories, hour limits and a kanban board.",
   "license": "MIT",

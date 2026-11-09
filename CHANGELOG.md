@@ -2,6 +2,25 @@
 
 The project is in early development (0.x). Data formats and UI may still change.
 
+## 0.10.0 — 2026-11-09
+
+- **Cards look like the Super Productivity board**: round checkbox box, larger title, parent task above a subtask,
+  project and tags with their emoji icon or color, priority, estimate (spent / estimate), subtask count
+  and due date with a calendar icon on the right. Done cards are faded. One card layout for all pages.
+- **Kanban: "In progress" is linked to the `#in-progress` tag both ways.** Moving a card to "In progress" sets the tag,
+  leaving the column removes it. A tag set or removed in Super Productivity moves the card on the next refresh.
+  The tag is created on first use. On the first run, tasks already in "In progress" get the tag (`cfg.progressTagInit`).
+- Kanban cards have a checkbox instead of the status buttons. Task menu → Status changes the column.
+- No drag handle: the whole card is draggable.
+- The estimate moved to the right side of the card; a click on it still opens the estimate menu.
+
+## 0.9.0 — 2026-11-09
+
+- **Compact week cards.** The estimate field and the "← W", "W →", "Unplan" buttons are gone from the week page cards.
+  These actions are in the task menu. The "⋯" button moved to the top right corner of the card.
+- The estimate in the card meta line ("estimate 1h" or "+ estimate") opens the estimate menu.
+- Task menu → Week: new "One week earlier" and "One week later" items, relative to the week of the task.
+
 ## 0.8.0 — 2026-11-08
 
 - **Ready-made filters for the unplanned pool**, shown as buttons with task counts:

@@ -168,12 +168,22 @@ function drag(w, from, to) {
     });
 
     // Estimate the FNS task at 5 h: Personal (1.5 h + 5 h) goes over 6 h.
-    const est = [...colByTitle($('weekBoard'), 'Личное').querySelectorAll('.item')]
-      .find((li) => li.textContent.includes('ФНС')).querySelector('.num-input');
+    const fnsCard = [...colByTitle($('weekBoard'), 'Личное').querySelectorAll('.item')]
+      .find((li) => li.textContent.includes('ФНС'));
+    check('week card has no action buttons except ⋯', () => {
+      assert.deepStrictEqual([...fnsCard.querySelectorAll('button')].map((b) => b.className), ['more-btn']);
+      assert.ok(!fnsCard.querySelector('.num-input'));
+    });
+    fnsCard.querySelector('.est-link').click();
+    check('estimate link opens the estimate menu', () => {
+      assert.ok(!$('ctxMenu').hidden);
+      assert.ok($('ctxMenu').textContent.includes('Своё значение, ч'));
+    });
+    const est = $('ctxMenu').querySelector('input[type=number]');
     est.value = '5';
-    est.dispatchEvent(new w.Event('change'));
+    est.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter' }));
     await wait(50);
-    check('inline estimate updates the task and warns about the limit', () => {
+    check('estimate from the card updates the task and warns about the limit', () => {
       assert.strictEqual(w.__tasks.find((x) => x.id === 't5').timeEstimate, 5 * 3600e3);
       assert.ok($('toastMsg').textContent.includes('Неделя 45, «Личное»: 6ч 30м из 6ч'), $('toastMsg').textContent);
     });
@@ -308,18 +318,59 @@ function drag(w, from, to) {
       assert.ok(names(colByTitle($('kBoard'), 'Готово')).includes('Курсовая: глава 2'));
     });
 
-    const review = [...colByTitle($('kBoard'), 'Готово').querySelectorAll('.item')].find((li) => li.textContent.includes('Код-ревью'));
-    btn(review, '← Вернуть').click();
-    await wait(50);
-    check('reopen moves the task back to To do', () => {
-      assert.strictEqual(w.__tasks.find((x) => x.id === 't3').isDone, false);
+    check('a task already "In progress" gets the #in-progress tag on load', () => {
+      assert.strictEqual(w.__newTags.length, 1);
+      assert.ok(w.__tasks.find((x) => x.id === 't1').tagIds.includes(w.__newTags[0].id));
+      assert.ok(w.__tasks.find((x) => x.id === 't4').tagIds.includes(w.__newTags[0].id));
     });
 
-    const spb = [...colByTitle($('kBoard'), 'Сделать').querySelectorAll('.item')].find((li) => li.textContent.includes('Спортзал'));
-    btn(spb, 'В работу →').click();
+    check('kanban cards have no status buttons, only the checkbox and ⋯', () => {
+      const card = colByTitle($('kBoard'), 'Сделать').querySelector('.item');
+      assert.deepStrictEqual([...card.querySelectorAll('button')].map((b) => b.className), ['more-btn']);
+      assert.ok(card.querySelector('input[type=checkbox]'));
+    });
+
+    const kcard = (title) => [...$('kBoard').querySelectorAll('.item')].find((li) => li.textContent.includes(title));
+    const review = kcard('Код-ревью').querySelector('input[type=checkbox]');
+    review.checked = false;
+    review.dispatchEvent(new w.Event('change'));
     await wait(50);
-    check('"Start" moves a card to In progress and stores the status', () => {
+    check('unchecking a done card moves it back to To do', () => {
+      assert.strictEqual(w.__tasks.find((x) => x.id === 't3').isDone, false);
+      assert.ok(names(colByTitle($('kBoard'), 'Сделать')).includes('Код-ревью интеграции мессенджеров'));
+    });
+
+    const menuItem = (label) => [...$('ctxMenu').querySelectorAll('button')]
+      .find((b) => (b.querySelector('.grow') || b).textContent.trim() === label);
+    kcard('Спортзал').dispatchEvent(new w.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 50 }));
+    menuItem('Статус').click();
+    menuItem('В работе').click();
+    await wait(50);
+    check('task menu → Status moves a card to In progress and stores the status', () => {
       assert.strictEqual(JSON.parse(w.__store.t_t6).s, 'doing');
+      assert.ok(names(colByTitle($('kBoard'), 'В работе')).includes('Спортзал'));
+    });
+    check('"In progress" creates the #in-progress tag and puts it on the task', () => {
+      assert.strictEqual(w.__newTags.length, 1);
+      assert.strictEqual(w.__newTags[0].title, 'in-progress');
+      assert.ok(w.__tasks.find((x) => x.id === 't6').tagIds.includes(w.__newTags[0].id));
+    });
+    const spbBox = kcard('Спортзал').querySelector('input[type=checkbox]');
+    spbBox.checked = true;
+    spbBox.dispatchEvent(new w.Event('change'));
+    await wait(50);
+    check('leaving "In progress" removes the tag, the tag is not created twice', () => {
+      assert.ok(!w.__tasks.find((x) => x.id === 't6').tagIds.includes(w.__newTags[0].id));
+      assert.strictEqual(w.__newTags.length, 1);
+    });
+    const kursCard = kcard('Курсовая');
+    kursCard.dispatchEvent(new w.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 50, clientY: 50 }));
+    menuItem('Статус').click();
+    menuItem('В работе').click();
+    await wait(50);
+    check('the existing #in-progress tag is reused', () => {
+      assert.strictEqual(w.__newTags.length, 1);
+      assert.ok(w.__tasks.find((x) => x.id === 't2').tagIds.includes(w.__newTags[0].id));
     });
 
     btn($('kCats'), 'Университет · 2').click();
@@ -333,6 +384,33 @@ function drag(w, from, to) {
     await wait(1000);
     check('navigation request switches the open view', () => {
       assert.ok(!$('pagePlan').hidden);
+    });
+  }
+
+  // ---------- #in-progress tag set in Super Productivity ----------
+  {
+    const { w, $ } = open('?page=kanban&ptag=1');
+    await wait(200);
+    const task = (id) => w.__tasks.find((x) => x.id === id);
+    check('a To do task with the existing #in-progress tag shows in In progress', () => {
+      assert.ok(names(colByTitle($('kBoard'), 'В работе')).includes('Оповестить ФНС об открытии зарубежного счёта'));
+      assert.strictEqual(JSON.parse(w.__store.t_t5).s, 'doing');
+      assert.ok(!w.__newTags, 'no new tag is created');
+      assert.ok(task('t1').tagIds.includes('ip'), 'old In progress tasks get the tag');
+      assert.strictEqual(JSON.parse(w.__store.cfg).progressTagInit, true);
+    });
+    task('t1').tagIds = task('t1').tagIds.filter((x) => x !== 'ip');
+    w.document.dispatchEvent(new w.Event('visibilitychange'));
+    await wait(450);
+    check('removing the tag in Super Productivity moves the card back to To do', () => {
+      assert.strictEqual(JSON.parse(w.__store.t_t1).s, 'todo');
+      assert.ok(names(colByTitle($('kBoard'), 'Сделать')).includes('Практическая №1 по дискретной математике: множества и диаграммы Эйлера'));
+    });
+    task('t6').tagIds = task('t6').tagIds.concat('ip');
+    w.document.dispatchEvent(new w.Event('visibilitychange'));
+    await wait(450);
+    check('adding the tag in Super Productivity moves the card to In progress', () => {
+      assert.strictEqual(JSON.parse(w.__store.t_t6).s, 'doing');
     });
   }
 
@@ -388,6 +466,28 @@ function drag(w, from, to) {
     [...$('ctxMenu').querySelectorAll('.ctx-date')].find((b) => b.textContent.includes('Сегодня')).click();
     await wait(50);
     check('"Today" sets the due day', () => { assert.strictEqual(task('t2').dueDay, '2026-11-08'); });
+
+    const weekOf = () => JSON.parse(w.__store.t_t2).w;
+    const startWeek = weekOf();
+    rightClick(card('Курсовая'));
+    item('Неделя').click();
+    item('На неделю позже').click();
+    await wait(50);
+    check('"One week later" moves the task from its own week', () => { assert.notStrictEqual(weekOf(), startWeek); });
+    // The card left the shown week; open the menu from the page of the next week.
+    const chipStep = (d) => {
+      const chips = [...$('weekStrip').querySelectorAll('.chip')];
+      chips[chips.findIndex((c) => c.classList.contains('sel')) + d].click();
+    };
+    chipStep(1);
+    await wait(50);
+    rightClick(card('Курсовая'));
+    item('Неделя').click();
+    item('На неделю раньше').click();
+    await wait(50);
+    check('"One week earlier" moves the task back', () => { assert.strictEqual(weekOf(), startWeek); });
+    chipStep(-1);
+    await wait(50);
 
     rightClick(card('Курсовая'));
     item('Категория').click();

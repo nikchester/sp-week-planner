@@ -48,6 +48,7 @@ module.exports = function fakeApiSource() {
     T('p6', 'Эссе по философии', { projectId: 'uni', tagIds: ['kai'], timeEstimate: 2.5 * H, dueDay: '2026-11-18', deadlineDay: '2026-11-17' }),
     T('p7', 'Настроить мониторинг Grafana', { projectId: 'work', timeEstimate: 4 * H, issueId: '123', issueType: 'GITLAB' })
   ];
+  if (params.get('ptag')) tasks.find(function (x) { return x.id === 't5'; }).tagIds = ['ip'];
   window.__store = store;
   window.__secrets = secrets;
   window.__tasks = tasks;
@@ -63,8 +64,11 @@ module.exports = function fakeApiSource() {
     setSecret: async function (k, v) { secrets[k] = v; },
     getTasks: async function () { return tasks; },
     getArchivedTasks: async function () { return []; },
-    getAllProjects: async function () { return [{ id: 'uni', title: 'Учёба' }, { id: 'work', title: 'Работа' }]; },
-    getAllTags: async function () { return [{ id: 'TODAY', title: 'Today' }, { id: 'kai', title: 'КАИ' }, { id: 'health', title: 'Здоровье' }, { id: 'read', title: 'Чтение' }]; },
+    getAllProjects: async function () { return [{ id: 'uni', title: 'Учёба', icon: '🎓', theme: { primary: '#f6b13b' } }, { id: 'work', title: 'Работа', icon: 'work', theme: { primary: '#4a90e2' } }]; },
+    getAllTags: async function () { return [{ id: 'TODAY', title: 'Today' }, { id: 'kai', title: 'КАИ', icon: '👨‍🎓', color: '#a05a2c' },
+      { id: 'health', title: 'Здоровье', theme: { primary: '#ef6c00' } }, { id: 'read', title: 'Чтение', theme: { primary: '#ab47bc' } }]
+      .concat(params.get('ptag') ? [{ id: 'ip', title: 'in-progress' }] : []); },
+    addTag: async function (d) { var id = 'tag' + (++window.__tagN || (window.__tagN = 1)); window.__newTags = (window.__newTags || []).concat([{ id: id, title: d.title }]); return id; },
     addTask: async function (d) { var id = 'n' + tasks.length; tasks.push(T(id, d.title)); return id; },
     updateTask: async function (id, u) { tasks.forEach(function (x) { if (x.id === id) Object.assign(x, u); }); },
     selectTask: async function (id) { window.__selected = id; },

@@ -6,19 +6,21 @@
 <title>Week planner</title>
 <style>
   :root {
-    --bg: #f7f7f9; --card: #ffffff; --card2: #f1f2f5; --text: #1f2328; --muted: #6b7280;
-    --border: #e3e5ea; --accent: #4f46e5; --accent-soft: #eef0ff;
+    --bg: #f5f5f7; --card: #ffffff; --card2: #ececf0; --text: #1d1d1f; --muted: #6e6e76; --soft: #4a4a52;
+    --border: #e0e0e5; --border-hi: #c9c9d1; --accent: #4f46e5; --accent-soft: #eef0ff;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .04);
     --warn: #c2410c; --warn-soft: #fff4ea; --bad: #dc2626; --bad-soft: #fdecec; --ok: #15803d; --ok-soft: #e8f6ec;
   }
   body.dark {
-    --bg: #131315; --card: #1d1d20; --card2: #232327; --text: #e7e7ea; --muted: #9ca0aa;
-    --border: #2e2e33; --accent: #9496ff; --accent-soft: #26264a;
+    --bg: #121215; --card: #1e1e22; --card2: #16161a; --text: #ececef; --muted: #9a9aa3; --soft: #c4c4cb;
+    --border: #2a2a30; --border-hi: #3a3a42; --accent: #9496ff; --accent-soft: #26264a;
+    --shadow: 0 1px 3px rgba(0, 0, 0, .35);
     --warn: #fb923c; --warn-soft: #3a2616; --bad: #f87171; --bad-soft: #3b1a1a; --ok: #4ade80; --ok-soft: #173322;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
-    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font: 14px/1.45 Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   .wrap { max-width: 1500px; margin: 0 auto; padding: 12px 16px 80px; }
   [hidden] { display: none !important; }
@@ -96,22 +98,56 @@
 
   /* lists and rows */
   .list { list-style: none; margin: 0; padding: 0; }
+  /* Task cards look like the task cards on the Super Productivity board. */
   .item {
-    display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; margin-bottom: 6px;
-    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    position: relative; display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 12px; margin-bottom: 6px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--shadow);
+    cursor: grab; transition: border-color .15s, opacity .15s;
   }
-  .item.pool { cursor: pointer; align-items: center; }
+  .item:hover { border-color: var(--border-hi); }
+  .item.pool { cursor: pointer; }
   .item.pool.sel { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
-  .item.overdue { border-left: 3px solid var(--warn); align-items: center; }
-  .item.done .name { text-decoration: line-through; color: var(--muted); }
-  .item input[type=checkbox] { width: 16px; height: 16px; margin-top: 2px; accent-color: var(--ok); cursor: pointer; flex-shrink: 0; }
-  .grip { color: var(--muted); cursor: grab; user-select: none; font-size: 12px; letter-spacing: -2px; flex-shrink: 0; padding-top: 2px; }
+  .item.overdue { border-left: 3px solid var(--warn); }
+  .item.done { opacity: .5; }
+  .item.done:hover { opacity: .8; }
+  .item.done .name { text-decoration: line-through; }
+  .item input[type=checkbox] {
+    -webkit-appearance: none; appearance: none; position: relative; flex-shrink: 0; width: 22px; height: 22px; margin: 0;
+    border: 2px solid var(--muted); border-radius: 6px; background: transparent; opacity: .75; cursor: pointer;
+  }
+  .item input[type=checkbox]:hover:not(:disabled) { opacity: 1; border-color: var(--ok); }
+  .item input[type=checkbox]:checked { opacity: 1; border-color: var(--ok); background: var(--ok); }
+  .item input[type=checkbox]:checked::after {
+    content: ''; position: absolute; left: 5px; top: 1px; width: 6px; height: 11px;
+    border: solid var(--card); border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
   .body { flex: 1; min-width: 0; }
-  .name { cursor: pointer; overflow-wrap: anywhere; }
-  .name:hover { color: var(--accent); text-decoration: underline; }
+  .parent { margin-bottom: 2px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .name { font-size: 15px; font-weight: 500; line-height: 1.35; cursor: pointer; overflow-wrap: anywhere; }
+  .name:hover { color: var(--accent); }
+  .mline { display: flex; flex-wrap: wrap; gap: 1px 12px; margin-top: 4px; font-size: 13px; color: var(--muted); }
+  .mchip { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+  .mico { font-size: 12px; line-height: 1; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+  .side { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  .est-col { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 15px; color: var(--soft); white-space: nowrap; }
+  .est-col .est.empty { font-size: 12px; color: var(--muted); }
+  .subs { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--muted); }
+  .due { display: flex; flex-direction: column; align-items: center; font-size: 12px; line-height: 1.1; color: var(--muted); white-space: nowrap; }
+  .due.over { color: var(--bad); }
+  .ic { display: inline-flex; }
+  .ic svg { width: 20px; height: 20px; fill: currentColor; }
+  .subs .ic svg { width: 14px; height: 14px; }
   .actions { display: flex; flex-wrap: wrap; gap: 4px; flex-shrink: 0; justify-content: flex-end; }
-  .card-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 6px; }
-  .card-foot .grow { flex: 1; }
+  /* Narrow board columns: keep room for the title. */
+  .bcol { container-type: inline-size; }
+  @container (max-width: 340px) {
+    .item { gap: 10px; padding: 9px 10px; }
+    .side { gap: 8px; }
+    .est-col { font-size: 13px; }
+    .est-col .est { max-width: 64px; white-space: normal; text-align: right; line-height: 1.2; }
+    .due .ic svg { width: 18px; height: 18px; }
+  }
   .empty { padding: 4px 2px; margin: 0; }
 
   /* planning: week cards */
@@ -130,13 +166,12 @@
   /* boards */
   .board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); gap: 12px; align-items: start; overflow-x: auto; padding-bottom: 6px; }
   @media (max-width: 640px) { .board { grid-auto-flow: row; grid-auto-columns: auto; overflow-x: visible; } }
-  .bcol { background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 10px; min-height: 120px; transition: background .15s; }
+  .bcol { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 8px 8px; min-height: 160px; transition: background .15s; }
   .bcol.over { border-color: var(--bad); }
-  .bcol-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; margin-bottom: 6px; }
-  .bcol-title { font-weight: 600; }
-  .bcol .bar { margin-bottom: 8px; }
-  .bcol .item { margin-bottom: 8px; }
-  .bcol.st-done { background: var(--ok-soft); }
+  .bcol-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; padding: 0 6px; margin-bottom: 10px; color: var(--soft); }
+  .bcol-title { font-weight: 600; font-size: 15px; color: var(--muted); }
+  .bcol .bar { margin: 0 6px 10px; flex-basis: auto; }
+  .bcol .item { margin-bottom: 6px; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { display: flex; flex-direction: column; align-items: center; min-width: 84px; padding: 6px 8px; }
@@ -195,6 +230,15 @@
   .ctx-head { padding: 8px 14px 4px; font-weight: 600; }
   .ctx-form { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 14px; }
   .more-btn { width: 26px; height: 24px; padding: 0; line-height: 20px; font-size: 16px; }
+  .item > .more-btn {
+    position: absolute; top: 3px; right: 3px; width: 24px; height: 20px; line-height: 16px;
+    border: 0; background: var(--card); color: var(--muted); opacity: 0;
+  }
+  .item:hover > .more-btn, .item > .more-btn:focus-visible { opacity: 1; }
+  .item > .more-btn:hover { color: var(--text); }
+  @media (hover: none) { .item > .more-btn { opacity: .7; } }
+  .est-link { cursor: pointer; border-radius: 4px; }
+  .est-link:hover, .est-link:focus-visible { color: var(--accent); outline: none; }
   /* Priority looks like in Super Productivity: a digit in a ring; 1 blue, 2 amber, 3 red. */
   .prio {
     display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -344,7 +388,7 @@
       week: 'Week {n}', current: 'current', past: 'past', future: 'upcoming', today: 'This week',
       prevW: 'Previous week', nextW: 'Next week', h: 'h', m: 'm', due: 'due',
       subtask: 'subtask', archived: 'archived', estimate: 'estimate {t}', spentT: 'spent {t}',
-      openTitle: 'Open the task in Super Productivity', dragTitle: 'Drag the card',
+      openTitle: 'Open the task in Super Productivity',
       doneTitle: 'Mark as done',
       pool: 'Unplanned', poolSearchPh: 'Quick search…', poolEmpty: 'No unplanned tasks match the filter.',
       poolHint: 'Click a row to select several tasks. Drag a task onto a week on the right.',
@@ -356,16 +400,13 @@
       weekTotal: 'Week plan {t} /', doneN: 'Done {d}/{n}', spentWeek: 'Tracked this week {t}',
       catsBtn: 'Categories & default limits', add: 'Add', addPh: 'New task for this week (goes to {c})…',
       stripTitle: 'Other weeks — drop a card here to move it',
-      toPrev: '← W{n}', toNext: 'W{n} →', toPrevTitle: 'Move to week {n}', toNextTitle: 'Move to week {n}',
-      unplan: 'Unplan', unplanTitle: 'Remove from this week. The task itself stays.',
-      estInput: 'estimate', estFromSubs: 'The estimate is the sum of the subtasks',
+      estAdd: '+ estimate', subtasksN: 'Subtasks: {n}', ctxStatus: 'Status', estFromSubs: 'The estimate is the sum of the subtasks',
       emptyCol: 'Drop tasks here', limitTitle: 'Default limit in hours per week', limitTitleWeek: 'Limit of this week. Other weeks are not changed.', limitsDefault: 'Limits: default', limitsOwn: 'own week limits', limitsReset: 'Use defaults', limitsResetTitle: 'Delete the own limits of this week and use the defaults again',
       weekLimitTitle: 'Limit of this week, hours. Other weeks are not changed.',
       over: 'over by {t}', overBanner: 'Limit exceeded', overItem: '{name}: {a} of {b} (+{x})',
       overLine: '⚠ Week {w}, "{name}": {a} of {b}',
       kTitle: 'Kanban · week {n}', kAll: 'All', kDone: 'Done {d} of {t}',
       st_todo: 'To do', st_doing: 'In progress', st_done: 'Done',
-      toDoing: 'Start →', toDone: 'Done →', toTodo: '← To do', reopen: '← Reopen',
       toastAdded: 'Added to week {w}: {n}', toastMoved: 'Moved to week {w}: {n}', toastRemoved: 'Removed from the week: {n}',
       undo: 'Undo', undone: 'Undone',
       pr_custom: 'My filter', pr_urgent: 'Urgent', pr_week: 'Due in W{n}', pr_prio: 'With priority',
@@ -393,7 +434,7 @@
       ctxDone: 'Mark as done', ctxUndone: 'Mark as not done', ctxTrack: 'Start time tracking',
       ctxEstimate: 'Estimate', ctxNoEst: 'No estimate', ctxCustom: 'Custom, h', ctxApply: 'OK',
       ctxTags: 'Toggle tags', ctxProject: 'Move to another project', ctxPriority: 'Priority', ctxNoPrio: 'No priority',
-      ctxWeek: 'Week', ctxThisWeek: 'This week', ctxNextWeek: 'Next week', ctxWeekAfter: 'Week after next',
+      ctxWeek: 'Week', ctxThisWeek: 'This week', ctxNextWeek: 'Next week', ctxWeekAfter: 'Week after next', ctxEarlier: 'One week earlier', ctxLater: 'One week later',
       ctxUnplan: 'Remove from week', ctxNotPlanned: 'not planned', ctxCat: 'Category', ctxOpen: 'Open task details',
       ctxDelete: 'Delete task', ctxDelConfirm: 'Click again to delete', ctxBack: '← Back', ctxDeleted: 'Task deleted',
       cat_unsorted: 'Unsorted', cat_uni: 'University', cat_career: 'Career', cat_personal: 'Personal',
@@ -427,7 +468,7 @@
       week: 'Неделя {n}', current: 'текущая', past: 'прошедшая', future: 'будущая', today: 'Эта неделя',
       prevW: 'Предыдущая неделя', nextW: 'Следующая неделя', h: 'ч', m: 'м', due: 'срок',
       subtask: 'подзадача', archived: 'в архиве', estimate: 'оценка {t}', spentT: 'затрачено {t}',
-      openTitle: 'Открыть задачу в Super Productivity', dragTitle: 'Перетащите карточку',
+      openTitle: 'Открыть задачу в Super Productivity',
       doneTitle: 'Отметить выполненной',
       pool: 'Не запланировано', poolSearchPh: 'Быстрый поиск…', poolEmpty: 'Под фильтр не попала ни одна незапланированная задача.',
       poolHint: 'Щёлкните по строке, чтобы выбрать несколько задач. Задачу можно перетащить на неделю справа.',
@@ -439,16 +480,13 @@
       weekTotal: 'План недели {t} /', doneN: 'Готово {d}/{n}', spentWeek: 'Затрачено за неделю {t}',
       catsBtn: 'Категории и стандартные лимиты', add: 'Добавить', addPh: 'Новая задача на эту неделю (попадёт в «{c}»)…',
       stripTitle: 'Другие недели — перетащите карточку сюда, чтобы перенести',
-      toPrev: '← Нед. {n}', toNext: 'Нед. {n} →', toPrevTitle: 'Перенести на неделю {n}', toNextTitle: 'Перенести на неделю {n}',
-      unplan: 'Убрать', unplanTitle: 'Убрать из этой недели. Сама задача останется.',
-      estInput: 'оценка', estFromSubs: 'Оценка складывается из подзадач',
+      estAdd: '+ оценка', subtasksN: 'Подзадач: {n}', ctxStatus: 'Статус', estFromSubs: 'Оценка складывается из подзадач',
       emptyCol: 'Перетащите задачи сюда', limitTitle: 'Стандартный лимит часов на неделю', limitTitleWeek: 'Лимит этой недели. Изменение не затрагивает другие недели.', limitsDefault: 'Лимиты: стандартные', limitsOwn: 'свои лимиты недели', limitsReset: 'Вернуть стандартные', limitsResetTitle: 'Удалить свои лимиты этой недели и снова использовать стандартные',
       weekLimitTitle: 'Лимит этой недели, часов. Изменение не затрагивает другие недели.',
       over: 'превышено на {t}', overBanner: 'Превышен лимит', overItem: '{name}: {a} из {b} (+{x})',
       overLine: '⚠ Неделя {w}, «{name}»: {a} из {b}',
       kTitle: 'Канбан · неделя {n}', kAll: 'Все', kDone: 'Готово {d} из {t}',
       st_todo: 'Сделать', st_doing: 'В работе', st_done: 'Готово',
-      toDoing: 'В работу →', toDone: 'Готово →', toTodo: '← Сделать', reopen: '← Вернуть',
       toastAdded: 'Добавлено на неделю {w}: {n}', toastMoved: 'Перенесено на неделю {w}: {n}', toastRemoved: 'Убрано из недели: {n}',
       undo: 'Отменить', undone: 'Действие отменено',
       pr_custom: 'Мой фильтр', pr_urgent: 'Срочные', pr_week: 'Срок в нед. {n}', pr_prio: 'С приоритетом',
@@ -476,7 +514,7 @@
       ctxDone: 'Отметить как выполненное', ctxUndone: 'Вернуть в работу', ctxTrack: 'Начать отслеживание времени',
       ctxEstimate: 'Оценка', ctxNoEst: 'Без оценки', ctxCustom: 'Своё значение, ч', ctxApply: 'OK',
       ctxTags: 'Переключать метки', ctxProject: 'Переместить в другой проект', ctxPriority: 'Приоритет', ctxNoPrio: 'Без приоритета',
-      ctxWeek: 'Неделя', ctxThisWeek: 'Эта неделя', ctxNextWeek: 'Следующая неделя', ctxWeekAfter: 'Через неделю',
+      ctxWeek: 'Неделя', ctxThisWeek: 'Эта неделя', ctxNextWeek: 'Следующая неделя', ctxWeekAfter: 'Через неделю', ctxEarlier: 'На неделю раньше', ctxLater: 'На неделю позже',
       ctxUnplan: 'Убрать из недели', ctxNotPlanned: 'не запланирована', ctxCat: 'Категория', ctxOpen: 'Открыть панель задачи',
       ctxDelete: 'Удалить задачу', ctxDelConfirm: 'Нажмите ещё раз, чтобы удалить', ctxBack: '← Назад', ctxDeleted: 'Задача удалена',
       cat_unsorted: 'Несортированное', cat_uni: 'Университет', cat_career: 'Карьера', cat_personal: 'Личное',
@@ -831,7 +869,8 @@
       cats: d.cats,
       weekLimitH: posNum(raw.weekLimitH),
       cardSort: normSort(raw.cardSort, d.cardSort),
-      poolPreset: typeof raw.poolPreset === 'string' ? raw.poolPreset : null
+      poolPreset: typeof raw.poolPreset === 'string' ? raw.poolPreset : null,
+      progressTagInit: raw.progressTagInit === true
     };
     if (Array.isArray(raw.cats)) {
       cfg.cats = raw.cats.filter(function (c) { return c && c.id; }).map(function (c) {
@@ -995,12 +1034,37 @@
     res[3].forEach(function (task) { state.tasks[task.id] = task; state.archived[task.id] = true; });
     res[2].forEach(function (task) { state.tasks[task.id] = task; delete state.archived[task.id]; });
     state.projects = {};
-    res[4].forEach(function (p) { state.projects[p.id] = p.title; });
+    state.looks = {};
+    res[4].forEach(function (p) { state.projects[p.id] = p.title; state.looks['p:' + p.id] = lookOf(p); });
     state.tags = {};
-    res[5].forEach(function (tg) { if (tg.id !== TODAY_TAG) state.tags[tg.id] = tg.title; });
+    res[5].forEach(function (tg) {
+      if (tg.id !== TODAY_TAG) { state.tags[tg.id] = tg.title; state.looks['t:' + tg.id] = lookOf(tg); }
+    });
     state.cfg = res[6];
     buildFields();
     render();
+    reconcileProgress().catch(showErr);
+  }
+
+  // The #in-progress tag decides the "In progress" status, so a tag set or removed in Super Productivity
+  // moves the card. Once per install, tasks that were "In progress" before the tag existed get it first.
+  async function reconcileProgress() {
+    if (progressSyncs > 0) return; // our own tag update is on its way; the next load checks again
+    var ids = Object.keys(state.assign).filter(function (id) { return state.tasks[id] && !state.archived[id]; });
+    if (!state.cfg.progressTagInit) {
+      state.cfg.progressTagInit = true;
+      await syncProgressTags(ids.filter(function (id) { return statusOf(state.tasks[id]) === 'doing'; }));
+      await saveCfg();
+    }
+    var tagId = progressTagId();
+    var changes = {};
+    ids.forEach(function (id) {
+      var task = state.tasks[id], e = state.assign[id];
+      if (task.isDone) return;
+      var has = !!tagId && (task.tagIds || []).indexOf(tagId) !== -1;
+      if (has !== (e.s === 'doing')) changes[id] = { w: e.w, c: e.c, s: has ? 'doing' : 'todo' };
+    });
+    if (Object.keys(changes).length) await applyEntries(changes);
   }
 
   var loadTimer = null;
@@ -1159,7 +1223,54 @@
     render(true);
     return Promise.all(Object.keys(changes).map(function (id) {
       return PluginAPI.persistDataSynced(serializeEntry(changes[id]), KEY_PREFIX + id);
-    }));
+    })).then(function () { return syncProgressTags(Object.keys(changes)); });
+  }
+
+  // Tasks in the "In progress" kanban column carry the #in-progress tag; other tasks lose it.
+  // The tag is created on first use.
+  var PROGRESS_TAG = 'in-progress';
+  var progressTagReq = null;
+  var createdProgressTag = null; // guards against a second tag while getAllTags does not list the new one yet
+  function progressTagId() {
+    return Object.keys(state.tags).filter(function (id) {
+      return String(state.tags[id]).toLowerCase() === PROGRESS_TAG;
+    })[0] || createdProgressTag;
+  }
+  function ensureProgressTag() {
+    var id = progressTagId();
+    if (id) return Promise.resolve(id);
+    if (typeof PluginAPI.addTag !== 'function') return Promise.resolve(null);
+    if (!progressTagReq) {
+      progressTagReq = PluginAPI.addTag({ title: PROGRESS_TAG }).then(function (newId) {
+        progressTagReq = null;
+        if (newId) { createdProgressTag = newId; state.tags[newId] = PROGRESS_TAG; state.looks['t:' + newId] = { icon: null, color: null }; }
+        return newId || null;
+      }, function (e) { progressTagReq = null; throw e; });
+    }
+    return progressTagReq;
+  }
+  var progressSyncs = 0;
+  async function syncProgressTags(ids) {
+    progressSyncs++;
+    try { await syncProgressTagsNow(ids); } finally { progressSyncs--; }
+  }
+  async function syncProgressTagsNow(ids) {
+    for (var i = 0; i < ids.length; i++) {
+      var task = state.tasks[ids[i]];
+      if (!task || state.archived[task.id]) continue;
+      var want = statusOf(task) === 'doing';
+      var tagId = progressTagId();
+      var tags = task.tagIds || [];
+      var has = !!tagId && tags.indexOf(tagId) !== -1;
+      if (want === has) continue;
+      if (want) {
+        tagId = await ensureProgressTag();
+        if (!tagId) continue;
+        await updateTaskFields(task, { tagIds: tags.concat(tagId) });
+      } else {
+        await updateTaskFields(task, { tagIds: tags.filter(function (x) { return x !== tagId; }) });
+      }
+    }
   }
 
   // Applies entry changes, warns about newly exceeded limits and offers undo.
@@ -1217,6 +1328,7 @@
       task.isDone = true;
       render(true);
       await PluginAPI.updateTask(task.id, { isDone: true });
+      await syncProgressTags([task.id]);
       return;
     }
     var wasDone = task.isDone;
@@ -1229,6 +1341,7 @@
     task.isDone = isDone;
     render(true);
     await PluginAPI.updateTask(task.id, { isDone: isDone });
+    await syncProgressTags([task.id]);
   }
 
   async function setEstimate(task, hours) {
@@ -1277,24 +1390,107 @@
   }
 
   // ---------- shared pieces ----------
-  function metaEl(task, extra) {
+  // Icon and color of a project or tag, as Super Productivity shows them on task cards.
+  function lookOf(x) {
+    var color = (x.theme && x.theme.primary) || x.color || null;
+    var icon = typeof x.icon === 'string' && /[^\x00-\x7F]/.test(x.icon) ? x.icon : null; // emoji only, no icon font
+    return { icon: icon, color: color };
+  }
+
+  var ICONS = {
+    due: 'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V10h14v10zM5 8V6h14v2H5zm2 4h5v5H7z',
+    subs: 'M22 11V3h-7v3H9V3H2v8h7V8h2v10h4v3h7v-8h-7v3h-2V8h2v3z'
+  };
+  function icon(name) {
+    var span = el('span', { className: 'ic', 'aria-hidden': 'true' });
+    span.innerHTML = '<svg viewBox="0 0 24 24"><path d="' + ICONS[name] + '"/></svg>';
+    return span;
+  }
+
+  // kind: 'project' (list glyph) or 'tag' (dot) when there is no emoji icon.
+  function metaChip(label, look, kind) {
+    look = look || {};
+    var mark;
+    if (look.icon) mark = el('span', { className: 'mico', text: look.icon });
+    else if (kind === 'project') mark = el('span', { className: 'mico', text: '▤', style: look.color ? 'color:' + look.color : null });
+    else if (kind === 'plain') mark = null;
+    else mark = el('span', { className: 'dot', style: look.color ? 'color:' + look.color : null });
+    return el('span', { className: 'mchip' }, [mark, el('span', { text: label })]);
+  }
+
+  // extra: more chips for the meta line, e.g. the category or the week.
+  function metaLine(task, extra) {
     var parts = [];
-    var prio = prioOf(task);
-    if (prio) parts.push(prioBadge(prio));
-    if (task.projectId && state.projects[task.projectId]) parts.push(state.projects[task.projectId]);
-    (task.tagIds || []).forEach(function (id) { if (id !== TODAY_TAG) parts.push('#' + tagTitle(id)); });
-    if (task.parentId) parts.push(t('subtask'));
-    if (task.timeEstimate && extra !== 'noEst') parts.push(t('estimate', { t: fmtDur(task.timeEstimate) }));
-    if (task.timeSpent) parts.push(t('spentT', { t: fmtDur(task.timeSpent) }));
-    if (state.archived[task.id]) parts.push(t('archived'));
-    if (extra && extra !== 'noEst') parts.push(extra);
-    var dueTs = task.dueWithTime || dateVal(task.dueDay);
-    if (dueTs) {
-      var txt = t('due') + ' ' + (task.dueWithTime ? fmtDayTime(task.dueWithTime) : fmtDay(parseYmd(task.dueDay)));
-      parts.push(el('span', { className: !task.isDone && dayOf(dueTs) < state.today ? 'due-over' : '', text: txt }));
+    if (task.projectId && state.projects[task.projectId]) {
+      parts.push(metaChip(state.projects[task.projectId], state.looks['p:' + task.projectId], 'project'));
     }
-    if (!parts.length) return null;
-    return el('div', { className: 'muted' }, join(parts, ' · '));
+    (task.tagIds || []).forEach(function (id) {
+      if (id !== TODAY_TAG) parts.push(metaChip(tagTitle(id), state.looks['t:' + id], 'tag'));
+    });
+    if (task.parentId && !state.tasks[task.parentId]) parts.push(metaChip(t('subtask'), null, 'plain'));
+    if (state.archived[task.id]) parts.push(metaChip(t('archived'), null, 'plain'));
+    (extra || []).forEach(function (x) { if (x) parts.push(x); });
+    return parts.length ? el('div', { className: 'mline' }, parts) : null;
+  }
+
+  function fmtShortDay(ts) {
+    var d = new Date(ts);
+    return pad(d.getDate()) + '.' + pad(d.getMonth() + 1);
+  }
+
+  // onEst: when given, the estimate opens the estimate menu.
+  function estBlock(task, onEst) {
+    var est = task.timeEstimate || 0, spent = task.timeSpent || 0;
+    var txt = est ? (spent ? fmtDur(spent) + ' / ' + fmtDur(est) : fmtDur(est)) : (spent ? fmtDur(spent) : '');
+    var subs = (task.subTaskIds || []).length;
+    var estNode = null;
+    if (onEst) {
+      estNode = el('span', {
+        className: 'est est-link' + (txt ? '' : ' empty'), role: 'button', tabindex: '0', title: t('ctxEstimate'),
+        text: txt || t('estAdd'), onclick: stop(onEst),
+        onkeydown: function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ev.stopPropagation(); onEst(ev); } }
+      });
+    } else if (txt) {
+      estNode = el('span', { className: 'est', title: t('ctxEstimate'), text: txt });
+    }
+    if (!estNode && !subs) return null;
+    return el('div', { className: 'est-col' }, [
+      estNode,
+      subs ? el('span', { className: 'subs', title: t('subtasksN', { n: subs }) }, [icon('subs'), String(subs)]) : null
+    ]);
+  }
+
+  function dueBlock(task) {
+    var dueTs = task.dueWithTime || dateVal(task.dueDay);
+    if (!dueTs) return null;
+    var over = !task.isDone && dayOf(dueTs) < state.today;
+    var full = task.dueWithTime ? fmtDayTime(task.dueWithTime) : fmtDay(parseYmd(task.dueDay));
+    var short = fmtShortDay(dueTs);
+    if (task.dueWithTime) {
+      var d = new Date(task.dueWithTime);
+      short += ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+    return el('div', { className: 'due' + (over ? ' over' : ''), title: t('due') + ' ' + full }, [icon('due'), el('span', { text: short })]);
+  }
+
+  // One task card for every page. o: { check, onEst, extra: [chips], actions: [nodes], cls }.
+  function taskCard(task, o) {
+    o = o || {};
+    var parent = task.parentId && state.tasks[task.parentId];
+    var prio = prioOf(task);
+    var side = [prio ? prioBadge(prio) : null, estBlock(task, o.onEst), dueBlock(task)].filter(Boolean);
+    var li = el('li', { className: 'item' + (task.isDone ? ' done' : '') + (o.cls ? ' ' + o.cls : '') }, [
+      o.check ? doneBox(task) : null,
+      el('div', { className: 'body' }, [
+        parent ? el('div', { className: 'parent', text: parent.title }) : null,
+        nameEl(task),
+        metaLine(task, o.extra)
+      ]),
+      side.length ? el('div', { className: 'side' }, side) : null
+    ].concat(o.actions || []));
+    attachCtx(li, task, li);
+    makeDraggable(li, task.id);
+    return li;
   }
 
   function nameEl(task) {
@@ -1305,7 +1501,6 @@
     }
     return name;
   }
-  function grip() { return el('span', { className: 'grip', title: t('dragTitle'), 'aria-hidden': 'true', text: '⋮⋮' }); }
 
   function doneBox(task) {
     var check = el('input', { type: 'checkbox', title: t('doneTitle'), 'aria-label': t('doneTitle') });
@@ -1416,26 +1611,24 @@
 
   function poolRow(task) {
     var isSel = !!state.poolSel[task.id];
-    var li = el('li', {
-      className: 'item pool' + (isSel ? ' sel' : ''), tabindex: '0', role: 'option', 'aria-selected': isSel ? 'true' : 'false'
-    }, [
-      grip(),
-      el('div', { className: 'body' }, [nameEl(task), metaEl(task)]),
-      el('div', { className: 'actions' }, [
+    var li = taskCard(task, {
+      cls: 'pool' + (isSel ? ' sel' : ''),
+      actions: [el('div', { className: 'actions' }, [
         el('button', {
           type: 'button', className: 'small', title: t('addToTitle', { n: weekNum(state.target) }),
           text: t('addTo', { n: weekNum(state.target) }),
           onclick: stop(function () { run(function () { return planTasks([task.id], state.target); })(); })
         })
-      ])
-    ]);
-    attachCtx(li, task, li.querySelector('.actions'));
+      ])]
+    });
+    li.tabIndex = 0;
+    li.setAttribute('role', 'option');
+    li.setAttribute('aria-selected', isSel ? 'true' : 'false');
     li.addEventListener('click', function () { togglePoolSel(task.id, li); });
     li.addEventListener('keydown', function (ev) {
       if (ev.target !== li) return;
       if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); togglePoolSel(task.id, li); }
     });
-    makeDraggable(li, task.id);
     return li;
   }
 
@@ -1492,17 +1685,14 @@
   }
 
   function overdueRow(task) {
-    var li = el('li', { className: 'item overdue' }, [
-      grip(), doneBox(task),
-      el('div', { className: 'body' }, [nameEl(task), metaEl(task, t('week', { n: weekNum(state.assign[task.id].w) }))]),
-      el('div', { className: 'actions' }, [el('button', {
+    return taskCard(task, {
+      cls: 'overdue', check: true,
+      extra: [metaChip(t('week', { n: weekNum(state.assign[task.id].w) }), null, 'plain')],
+      actions: [el('div', { className: 'actions' }, [el('button', {
         type: 'button', className: 'small', text: t('toCurrentBtn'),
         onclick: run(function () { return planTasks([task.id], state.curWeek); })
-      })])
-    ]);
-    attachCtx(li, task, li.querySelector('.actions'));
-    makeDraggable(li, task.id);
-    return li;
+      })])]
+    });
   }
 
   function weekCard(w) {
@@ -1560,32 +1750,13 @@
 
   // ---------- week page ----------
   function weekCardTask(task) {
-    var w = state.assign[task.id].w;
-    var prevW = shiftWeek(w, -1), nextW = shiftWeek(w, 1);
+    // Week moves, unplanning and the estimate live in the task menu; the card stays compact.
     var hasSubs = (task.subTaskIds || []).length > 0;
-    var est = numInput(task.timeEstimate ? task.timeEstimate / HOUR : null, '0.25',
-      hasSubs ? t('estFromSubs') : t('estInput'), function (v) { return setEstimate(task, v); });
-    est.placeholder = '0';
-    if (hasSubs || state.archived[task.id]) est.disabled = true;
-    var li = el('li', { className: 'item' + (task.isDone ? ' done' : '') }, [
-      grip(), doneBox(task),
-      el('div', { className: 'body' }, [
-        nameEl(task), metaEl(task, 'noEst'),
-        el('div', { className: 'card-foot' }, [
-          el('span', { className: 'muted', text: t('estInput') }), est, el('span', { className: 'muted', text: t('h') }),
-          el('span', { className: 'grow' }),
-          el('button', { type: 'button', className: 'small', text: t('toPrev', { n: weekNum(prevW) }), title: t('toPrevTitle', { n: weekNum(prevW) }),
-            onclick: run(function () { return planTasks([task.id], prevW); }) }),
-          el('button', { type: 'button', className: 'small', text: t('toNext', { n: weekNum(nextW) }), title: t('toNextTitle', { n: weekNum(nextW) }),
-            onclick: run(function () { return planTasks([task.id], nextW); }) }),
-          el('button', { type: 'button', className: 'small', text: t('unplan'), title: t('unplanTitle'),
-            onclick: run(function () { return planTasks([task.id], null); }) })
-        ])
-      ])
-    ]);
-    attachCtx(li, task, li.querySelector('.card-foot'));
-    makeDraggable(li, task.id);
-    return li;
+    var onEst = hasSubs || state.archived[task.id] ? null : function (ev) {
+      var r = ev.currentTarget.getBoundingClientRect();
+      openCtx(task.id, r.left, r.bottom + 2, 'est');
+    };
+    return taskCard(task, { check: true, onEst: onEst });
   }
 
   function renderWeekPage() {
@@ -1662,28 +1833,10 @@
   }
 
   // ---------- kanban page ----------
+  // Status changes: drag between columns, the checkbox, or the task menu.
   function kanbanCard(task) {
-    var s = statusOf(task);
     var c = catById(catIdOf(task));
-    var btns = [];
-    var mv = function (to, key) {
-      return el('button', { type: 'button', className: 'small', text: t(key), onclick: run(function () { return setStatus(task, to); }) });
-    };
-    if (s === 'todo') btns.push(mv('doing', 'toDoing'), mv('done', 'toDone'));
-    if (s === 'doing') btns.push(mv('todo', 'toTodo'), mv('done', 'toDone'));
-    if (s === 'done' && !state.archived[task.id]) btns.push(mv('todo', 'reopen'));
-    var li = el('li', { className: 'item' + (task.isDone ? ' done' : '') }, [
-      grip(),
-      el('div', { className: 'body' }, [
-        nameEl(task),
-        el('div', null, [el('span', { className: 'badge', text: catName(c) })]),
-        metaEl(task),
-        el('div', { className: 'card-foot' }, [el('span', { className: 'grow' })].concat(btns))
-      ])
-    ]);
-    attachCtx(li, task, li.querySelector('.card-foot'));
-    makeDraggable(li, task.id);
-    return li;
+    return taskCard(task, { check: true, extra: [metaChip(catName(c), { color: 'var(--accent)' }, 'tag')] });
   }
 
   function renderKanban() {
@@ -1762,8 +1915,8 @@
     }
   }
 
-  function openCtx(id, x, y) {
-    ctx = { id: id, view: 'main', x: x, y: y, delArmed: false };
+  function openCtx(id, x, y, view) {
+    ctx = { id: id, view: view || 'main', x: x, y: y, delArmed: false };
     renderCtx();
   }
 
@@ -1876,6 +2029,11 @@
     items.push(ctxItem('◫', t('ctxWeek'), function () { ctxGo('week'); }, {
       sub: true, val: e ? t('week', { n: weekNum(e.w) }) : t('ctxNotPlanned')
     }));
+    if (e) {
+      items.push(ctxItem('◔', t('ctxStatus'), function () { ctxGo('status'); }, {
+        sub: true, disabled: archived, val: t('st_' + statusOf(task))
+      }));
+    }
     if (e) items.push(ctxItem('▤', t('ctxCat'), function () { ctxGo('cat'); }, { sub: true, val: catName(catById(e.c)) }));
     if (!archived) {
       items.push(ctxItem('↗', t('ctxOpen'), ctxAct(function () { return PluginAPI.selectTask(task.id); })));
@@ -1955,12 +2113,27 @@
     if (view === 'week') {
       items = ctxBack(t('ctxWeek'));
       var cur = state.assign[task.id] ? state.assign[task.id].w : null;
+      if (cur) {
+        [['ctxEarlier', -1], ['ctxLater', 1]].forEach(function (p) {
+          var to = shiftWeek(cur, p[1]);
+          items.push(ctxItem(p[1] < 0 ? '←' : '→', t(p[0]), ctxAct(function () { return planTasks([task.id], to); }),
+            { val: t('week', { n: weekNum(to) }) }));
+        });
+        items.push(ctxSep());
+      }
       [['ctxThisWeek', 0], ['ctxNextWeek', 1], ['ctxWeekAfter', 2]].forEach(function (p) {
         var w = shiftWeek(state.curWeek, p[1]);
         items.push(ctxItem(radio(cur === w), t(p[0]), ctxAct(function () { return planTasks([task.id], w); }),
           { val: t('week', { n: weekNum(w) }) }));
       });
       if (cur) items.push(ctxItem('✕', t('ctxUnplan'), ctxAct(function () { return planTasks([task.id], null); })));
+      return items;
+    }
+    if (view === 'status') {
+      items = ctxBack(t('ctxStatus'));
+      STATUSES.forEach(function (st) {
+        items.push(ctxItem(radio(statusOf(task) === st), t('st_' + st), ctxAct(function () { return setStatus(task, st); })));
+      });
       return items;
     }
     if (view === 'cat') {
