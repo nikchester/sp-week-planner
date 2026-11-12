@@ -1,6 +1,6 @@
 // Fake PluginAPI with realistic data. Used by the smoke test and the screenshot harness.
 // Exported as a source string so it can be injected into index.html before the plugin script.
-// URL parameters: theme=light|dark, lang=ru|en, page=plan|week|kanban, act=cats|pooleditor|select|toast|empty
+// URL parameters: theme=light|dark, lang=ru|en, page=plan|week|kanban, cur=<task id with time tracking>, act=cats|pooleditor|select|toast|empty
 module.exports = function fakeApiSource() {
   return `(function () {
   var H = 3600e3;
@@ -23,6 +23,7 @@ module.exports = function fakeApiSource() {
   if (params.get('act') === 'empty') { Object.keys(store).forEach(function (k) { delete store[k]; }); }
   var secrets = {};
   if (params.get('page')) secrets.nav = JSON.stringify({ page: params.get('page'), ts: 1 });
+  if (params.get('cur')) secrets.cur = JSON.stringify({ id: params.get('cur'), ts: 1 });
   function T(id, title, o) {
     return Object.assign({ id: id, title: title, isDone: false, projectId: null, tagIds: [], timeEstimate: 0,
       timeSpent: 0, subTaskIds: [], created: 1700000000000 + id.charCodeAt(1) * 1000 }, o || {});
@@ -72,6 +73,7 @@ module.exports = function fakeApiSource() {
     addTask: async function (d) { var id = 'n' + tasks.length; tasks.push(T(id, d.title)); return id; },
     updateTask: async function (id, u) { tasks.forEach(function (x) { if (x.id === id) Object.assign(x, u); }); },
     selectTask: async function (id) { window.__selected = id; },
+    dispatchAction: async function (act) { window.__actions = (window.__actions || []).concat([act.type]); },
     deleteTask: async function (id) { var i = tasks.findIndex(function (x) { return x.id === id; }); if (i >= 0) tasks.splice(i, 1); },
     startTracking: async function (id) { window.__tracking = id; },
     registerHook: function () {}, showSnack: function () {}, log: { err: console.error }

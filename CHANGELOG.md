@@ -2,6 +2,25 @@
 
 The project is in early development (0.x). Data formats and UI may still change.
 
+## 0.13.1 — 2026-11-12
+
+- **A done task counts its spent time**, not its estimate: week plan, category hours, limits and the banner,
+  week cards on the planning page, the week strip, the kanban "Done X of Y" and column hours.
+  A done task without tracked time still counts its estimate. Open tasks count the estimate, as before.
+
+## 0.13.0 — 2026-11-10
+
+- **"+" in the kanban column header**, like on the Super Productivity board. It opens the usual add task bar
+  of Super Productivity (`dispatchAction` with `[Layout] Show AddTaskBar`).
+- Tasks created in the bar go to that column, to the kanban week and to the chosen category
+  (no category chosen: unsorted). "In progress" sets the `#in-progress` tag, "Done" marks the task done.
+- The plugin takes unplanned top-level tasks created after the click. The wait ends on the next click
+  or key press in the plugin, or after 15 minutes. Subtasks and older tasks are not taken.
+- The "Added to …" toast offers undo.
+- **The task with time tracking is highlighted** on every page, like the current task in Super Productivity:
+  a lighter card and a play icon in place of the checkbox (the checkbox comes back on hover).
+  `plugin.js` keeps the task id from the `currentTaskChange` hook in local secret storage; the view polls it.
+
 ## 0.12.0 — 2026-11-09
 
 - **Manual order on the kanban.** Drop a card onto another card: it goes before or after it

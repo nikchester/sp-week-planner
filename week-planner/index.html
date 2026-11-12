@@ -7,13 +7,13 @@
 <style>
   :root {
     --bg: #f5f5f7; --card: #ffffff; --card2: #ececf0; --text: #1d1d1f; --muted: #6e6e76; --soft: #4a4a52;
-    --border: #e0e0e5; --border-hi: #c9c9d1; --accent: #4f46e5; --accent-soft: #eef0ff;
+    --border: #e0e0e5; --border-hi: #c9c9d1; --accent: #4f46e5; --accent-soft: #eef0ff; --cur: #e91e63; --cur-bg: #f1f1f5;
     --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .04);
     --warn: #c2410c; --warn-soft: #fff4ea; --bad: #dc2626; --bad-soft: #fdecec; --ok: #15803d; --ok-soft: #e8f6ec;
   }
   body.dark {
     --bg: #121215; --card: #1e1e22; --card2: #16161a; --text: #ececef; --muted: #9a9aa3; --soft: #c4c4cb;
-    --border: #2a2a30; --border-hi: #3a3a42; --accent: #9496ff; --accent-soft: #26264a;
+    --border: #2a2a30; --border-hi: #3a3a42; --accent: #9496ff; --accent-soft: #26264a; --cur: #ff4081; --cur-bg: #2b2b31;
     --shadow: 0 1px 3px rgba(0, 0, 0, .35);
     --warn: #fb923c; --warn-soft: #3a2616; --bad: #f87171; --bad-soft: #3b1a1a; --ok: #4ade80; --ok-soft: #173322;
   }
@@ -108,6 +108,15 @@
   .item.pool { cursor: pointer; }
   .item.pool.sel { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
   .item.overdue { border-left: 3px solid var(--warn); }
+  /* The task Super Productivity tracks time for, like the current task in its task list. */
+  .cur-ico { display: none; }
+  .item.cur { background: var(--cur-bg); border-color: var(--border-hi); }
+  .item.cur .cur-ico {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 22px; height: 22px;
+    border: 2px solid var(--cur); border-radius: 6px; color: var(--cur); font-size: 10px; line-height: 1;
+  }
+  .item.cur:not(:hover) > input[type=checkbox] { display: none; }
+  .item.cur:hover > input[type=checkbox] ~ .cur-ico { display: none; }
   .item.done { opacity: .5; }
   .item.done:hover { opacity: .8; }
   .item.done .name { text-decoration: line-through; }
@@ -178,6 +187,9 @@
   .edit-btn svg { width: 16px; height: 16px; fill: currentColor; }
   .edit-btn:hover:not(:disabled) { opacity: 1; color: var(--text); background: var(--accent-soft); }
   .edit-btn.on { opacity: 1; color: var(--accent); }
+  .bcol-right { display: inline-flex; align-items: center; gap: 6px; }
+  .add-btn { width: 30px; height: 30px; opacity: .85; }
+  .add-btn svg { width: 24px; height: 24px; }
   .bcol .bar { margin: 0 6px 10px; flex-basis: auto; }
   .bcol .item { margin-bottom: 6px; }
   .bcol .item.ins-before { box-shadow: 0 -3px 0 var(--accent); }
@@ -385,6 +397,7 @@
   var CFG_KEY = 'cfg';
   var WL_PREFIX = 'wl_';
   var NAV_SECRET = 'nav';
+  var CUR_SECRET = 'cur'; // id of the task with time tracking; plugin.js writes it
   var WEEK_RE = /^\d{4}-W\d{2}$/;
   var HOUR = 3600000;
   var TODAY_TAG = 'TODAY';
@@ -441,7 +454,7 @@
       edAllocNoWeek: 'Category limits together: {a}. No week limit set.',
       ctxMore: 'Task actions', ctxToday: 'Today', ctxTomorrow: 'Tomorrow', ctxNextMon: 'Next Mon', ctxDate: 'Date',
       ctxDueTitle: 'Set the due day to {d}', ctxClearDue: 'Remove due date', ctxSetDue: 'Set',
-      ctxDone: 'Mark as done', ctxUndone: 'Mark as not done', ctxTrack: 'Start time tracking',
+      ctxDone: 'Mark as done', ctxUndone: 'Mark as not done', ctxTrack: 'Start time tracking', curTitle: 'Time is being tracked',
       ctxEstimate: 'Estimate', ctxNoEst: 'No estimate', ctxCustom: 'Custom, h', ctxApply: 'OK',
       ctxTags: 'Toggle tags', ctxProject: 'Move to another project', ctxPriority: 'Priority', ctxNoPrio: 'No priority',
       ctxWeek: 'Week', ctxThisWeek: 'This week', ctxNextWeek: 'Next week', ctxWeekAfter: 'Week after next', ctxEarlier: 'One week earlier', ctxLater: 'One week later',
@@ -451,6 +464,8 @@
       edCats: 'Categories and default limits', edCatsHint: 'Categories are the same for every week. Default limits apply to every week except weeks where you set own limits on the week page.',
       catName: 'Name', catLimit: 'default, h', addCat: '+ Category', weekLimit: 'Default week limit, hours',
       cardSort: 'Card order inside columns', untitled: 'Untitled',
+      colAdd: 'Add a task to this column', addBarNo: 'This Super Productivity version cannot open the add task bar for plugins',
+      addBarHint: 'New tasks go to «{name}» of week {w}', addBarDone: 'Added to «{name}»: {n}',
       colEdit: 'Filter & sort of this column', edCol: 'Column «{name}»: filter & sort',
       edColHint: 'The filter only hides cards. Hours and limits count all tasks of the column.',
       colHidden: 'hidden {n}', colHiddenTitle: 'Hidden by the column filter. They still count toward the hours.',
@@ -528,7 +543,7 @@
       edAllocNoWeek: 'Сумма лимитов категорий: {a}. Лимит недели не задан.',
       ctxMore: 'Действия с задачей', ctxToday: 'Сегодня', ctxTomorrow: 'Завтра', ctxNextMon: 'След. пн', ctxDate: 'Дата',
       ctxDueTitle: 'Срок: {d}', ctxClearDue: 'Убрать срок', ctxSetDue: 'Задать',
-      ctxDone: 'Отметить как выполненное', ctxUndone: 'Вернуть в работу', ctxTrack: 'Начать отслеживание времени',
+      ctxDone: 'Отметить как выполненное', ctxUndone: 'Вернуть в работу', ctxTrack: 'Начать отслеживание времени', curTitle: 'Идёт отслеживание времени',
       ctxEstimate: 'Оценка', ctxNoEst: 'Без оценки', ctxCustom: 'Своё значение, ч', ctxApply: 'OK',
       ctxTags: 'Переключать метки', ctxProject: 'Переместить в другой проект', ctxPriority: 'Приоритет', ctxNoPrio: 'Без приоритета',
       ctxWeek: 'Неделя', ctxThisWeek: 'Эта неделя', ctxNextWeek: 'Следующая неделя', ctxWeekAfter: 'Через неделю', ctxEarlier: 'На неделю раньше', ctxLater: 'На неделю позже',
@@ -538,6 +553,8 @@
       edCats: 'Категории и стандартные лимиты', edCatsHint: 'Категории общие для всех недель. Стандартные лимиты получают все недели, кроме тех, где вы задали свои лимиты на вкладке недели.',
       catName: 'Название', catLimit: 'стандарт, ч', addCat: '+ Категория', weekLimit: 'Стандартный лимит недели, часов',
       cardSort: 'Порядок карточек в колонках', untitled: 'Без названия',
+      colAdd: 'Добавить задачу в эту колонку', addBarNo: 'Эта версия Super Productivity не даёт плагинам открыть строку добавления задачи',
+      addBarHint: 'Новые задачи попадут в «{name}» недели {w}', addBarDone: 'Добавлено в «{name}»: {n}',
       colEdit: 'Фильтр и сортировка колонки', edCol: 'Колонка «{name}»: фильтр и сортировка',
       edColHint: 'Фильтр только скрывает карточки. Часы и лимиты учитывают все задачи колонки.',
       colHidden: 'скрыто {n}', colHiddenTitle: 'Скрыты фильтром колонки. Часы и лимиты их учитывают.',
@@ -652,7 +669,7 @@
 
   // ---------- state ----------
   var state = {
-    today: null, curWeek: null,
+    today: null, curWeek: null, curTask: null,
     page: 'plan', week: null, kWeek: null, planStart: null, target: null,
     assign: {}, tasks: {}, archived: {}, projects: {}, tags: {}, weekLimits: {},
     cfg: defaultCfg(), poolQuery: '', poolSel: {}, kCat: null
@@ -913,6 +930,7 @@
     var shown = sortTasks(tasks.filter(function (x) { return matchView(x, v); }), v.sort);
     return { shown: shown, hidden: tasks.length - shown.length, own: v.own };
   }
+  var PLUS = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>';
   var PENCIL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 ' +
     '7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>';
   function colHead(key, name, tasks, view, right) {
@@ -1130,8 +1148,9 @@
     });
     state.cfg = res[6];
     buildFields();
+    var added = takeAdded();
     render();
-    reconcileProgress().catch(showErr);
+    (added ? placeAdded(added) : Promise.resolve()).then(reconcileProgress).catch(showErr);
   }
 
   // The #in-progress tag decides the "In progress" status, so a tag set or removed in Super Productivity
@@ -1176,7 +1195,10 @@
     var e = state.assign[task.id];
     return e && e.s === 'doing' ? 'doing' : 'todo';
   }
-  function hoursOf(list) { return list.reduce(function (s, x) { return s + (x.timeEstimate || 0); }, 0); }
+  // Time a task takes in plans and limits. A done task counts its spent time; a done task without
+  // tracked time and an open task count the estimate.
+  function loadOf(task) { return (task.isDone && task.timeSpent) || task.timeEstimate || 0; }
+  function hoursOf(list) { return list.reduce(function (s, x) { return s + loadOf(x); }, 0); }
   function limMs(h) { return h ? h * HOUR : null; }
 
   function weekLoad(w) {
@@ -1185,7 +1207,7 @@
     state.cfg.cats.forEach(function (c) { cats[c.id] = { h: 0, n: 0 }; });
     wt.forEach(function (task) {
       var c = cats[catIdOf(task)];
-      c.h += task.timeEstimate || 0;
+      c.h += loadOf(task);
       c.n++;
     });
     return { tasks: wt, total: hoursOf(wt), cats: cats };
@@ -1567,8 +1589,10 @@
     var parent = task.parentId && state.tasks[task.parentId];
     var prio = prioOf(task);
     var side = [prio ? prioBadge(prio) : null, estBlock(task, o.onEst), dueBlock(task)].filter(Boolean);
-    var li = el('li', { className: 'item' + (task.isDone ? ' done' : '') + (o.cls ? ' ' + o.cls : ''), 'data-id': task.id }, [
+    var cur = task.id === state.curTask;
+    var li = el('li', { className: 'item' + (task.isDone ? ' done' : '') + (cur ? ' cur' : '') + (o.cls ? ' ' + o.cls : ''), 'data-id': task.id }, [
       o.check ? doneBox(task) : null,
+      el('span', { className: 'cur-ico', text: '▶', title: t('curTitle'), 'aria-label': t('curTitle') }),
       el('div', { className: 'body' }, [
         parent ? el('div', { className: 'parent', text: parent.title }) : null,
         nameEl(task),
@@ -1959,7 +1983,9 @@
       var view = colItems('k:' + s, all);
       var list = view.shown;
       var col = el('div', { className: 'bcol st-' + s }, [
-        colHead('k:' + s, t('st_' + s), all, view, el('span', { className: 'muted', text: fmtDur(hoursOf(all)) })),
+        colHead('k:' + s, t('st_' + s), all, view, el('span', { className: 'bcol-right' }, [
+          el('span', { className: 'muted', text: fmtDur(hoursOf(all)) }), addBtn(s)
+        ])),
         list.length ? el('ul', { className: 'list' }, list.map(kanbanCard)) : el('p', { className: 'muted empty', text: t('emptyCol') })
       ]);
       makeDropTarget(col, function (id, ev) { return dropOnKanban(id, s, w, ev); });
@@ -1968,6 +1994,66 @@
       col.addEventListener('drop', function () { markInsert(col, null); }, true);
       return col;
     }));
+  }
+
+  // ---------- kanban: "+" of a column ----------
+  // The "+" opens the add task bar of Super Productivity. Unplanned top-level tasks created while the bar
+  // is open go to that column. The wait ends on the next click in the plugin or after ADD_WAIT_MS.
+  var ADD_WAIT_MS = 15 * 60 * 1000;
+  var pendingAdd = null; // { w, c, s, since, until }
+  var claimedAdd = {};   // ids already given to a column; a load can come before the entry is stored
+  function addBtn(s) {
+    var b = el('button', {
+      type: 'button', className: 'edit-btn add-btn', title: t('colAdd'), 'aria-label': t('colAdd'),
+      onclick: stop(run(function () { return openAddBar(s); }))
+    });
+    b.innerHTML = PLUS;
+    return b;
+  }
+  async function openAddBar(s) {
+    if (typeof PluginAPI.dispatchAction !== 'function') throw new Error(t('addBarNo'));
+    var p = { w: state.kWeek, c: state.kCat || UNSORTED, s: s, since: Date.now() - 1000, until: null };
+    pendingAdd = p;
+    try {
+      await PluginAPI.dispatchAction({ type: '[Layout] Show AddTaskBar' });
+    } catch (e) {
+      if (pendingAdd === p) pendingAdd = null;
+      throw e;
+    }
+    showToast(t('addBarHint', { name: t('st_' + s), w: weekNum(p.w) }), false, null);
+  }
+  // A click in the plugin means the add task bar is closed: the next load is the last one that waits.
+  function endAddWait() {
+    if (!pendingAdd || pendingAdd.until !== null) return;
+    pendingAdd.until = Date.now();
+    scheduleLoad();
+  }
+  // Returns the ids of the new tasks for the waiting column and ends a finished wait.
+  function takeAdded() {
+    var p = pendingAdd;
+    if (!p) return null;
+    if (p.until === null && Date.now() - p.since > ADD_WAIT_MS) p.until = p.since + ADD_WAIT_MS;
+    var end = p.until === null ? Infinity : p.until;
+    var ids = Object.keys(state.tasks).filter(function (id) {
+      var x = state.tasks[id];
+      return !state.archived[id] && !state.assign[id] && !claimedAdd[id] && !x.parentId &&
+        (x.created || 0) >= p.since && x.created <= end;
+    });
+    if (p.until !== null) pendingAdd = null;
+    if (!ids.length) return null;
+    ids.forEach(function (id) { claimedAdd[id] = true; });
+    return { p: p, ids: ids };
+  }
+  async function placeAdded(got) {
+    var p = got.p, changes = {};
+    got.ids.forEach(function (id) { changes[id] = { w: p.w, c: p.c, s: p.s === 'doing' ? 'doing' : 'todo' }; });
+    await changeEntries(changes, t('addBarDone', { name: t('st_' + p.s), n: got.ids.length }), true);
+    if (p.s === 'done') {
+      for (var i = 0; i < got.ids.length; i++) {
+        var task = state.tasks[got.ids[i]];
+        if (task && !task.isDone) await toggleDone(task, true);
+      }
+    }
   }
 
   // The card under the pointer and the side of it: { li, id, after } or null.
@@ -2686,6 +2772,30 @@
     else if (nav.page === 'week') setPage('week');
   }
 
+  // ---------- the task with time tracking ----------
+  // Super Productivity has no getter for it: plugin.js keeps the id from the currentTaskChange hook
+  // in local secret storage, and the view reads it on the same poll as the navigation requests.
+  function setCurTask(id) {
+    id = id || null;
+    if (id === state.curTask) return;
+    state.curTask = id;
+    Array.prototype.forEach.call(document.querySelectorAll('li.item[data-id]'), function (li) {
+      li.classList.toggle('cur', li.getAttribute('data-id') === id);
+    });
+  }
+  async function checkCur() {
+    if (typeof PluginAPI.getSecret !== 'function') return;
+    var raw;
+    try { raw = await PluginAPI.getSecret(CUR_SECRET); } catch (e) { return; }
+    var cur = null;
+    try { cur = raw ? JSON.parse(raw) : null; } catch (e) { cur = null; }
+    setCurTask(cur && cur.id);
+  }
+  function onCurTaskChange(p) {
+    var task = p && Object.prototype.hasOwnProperty.call(p, 'current') ? p.current : p;
+    setCurTask(task && task.id);
+  }
+
   // ---------- init ----------
   function applyStaticText() {
     $('poolTitle').textContent = t('pool');
@@ -2768,6 +2878,8 @@
       if (ctxKeydown(ev)) return;
       if (ev.key === 'Escape' && editor) requestCloseEditor();
     });
+    document.addEventListener('pointerdown', endAddWait, true);
+    document.addEventListener('keydown', endAddWait, true);
     document.addEventListener('mousedown', function (ev) {
       if (ctx && !$('ctxMenu').contains(ev.target)) closeCtx();
     }, true);
@@ -2782,6 +2894,7 @@
       PluginAPI.registerHook(H.DATA_CHANGED || 'dataChanged', scheduleLoad);
       PluginAPI.registerHook(H.PERSISTED_DATA_CHANGED || 'persistedDataChanged', scheduleLoad);
       PluginAPI.registerHook(H.DAY_CHANGE || 'dayChange', scheduleLoad);
+      PluginAPI.registerHook(H.CURRENT_TASK_CHANGE || 'currentTaskChange', onCurTaskChange);
     } catch (e) {
       showErr(e);
     }
@@ -2792,9 +2905,10 @@
     await resolveLang();
     applyStaticText();
     bindEvents();
+    await checkCur();
     await load();
     await checkNav();
-    setInterval(function () { if (!document.hidden) checkNav(); }, 800);
+    setInterval(function () { if (!document.hidden) { checkNav(); checkCur(); } }, 800);
   }
 
   if (document.readyState === 'loading') {

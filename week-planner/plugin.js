@@ -4,6 +4,7 @@
 
   var KEY_PREFIX = 't_';
   var NAV_SECRET = 'nav';
+  var CUR_SECRET = 'cur';
   var UNSORTED = 'unsorted';
   var WEEK_RE = /^\d{4}-W\d{2}$/;
 
@@ -273,6 +274,17 @@
       }
     } catch (e) {
       PluginAPI.log.warn('[week-planner] cleanup failed', e);
+    }
+  });
+
+  // The view highlights the task with time tracking. Super Productivity has no getter for it,
+  // so keep the id from this hook in local (not synced) secret storage; the view polls it.
+  PluginAPI.registerHook(PluginAPI.Hooks.CURRENT_TASK_CHANGE || 'currentTaskChange', async function (payload) {
+    try {
+      var cur = payload && payload.current;
+      await PluginAPI.setSecret(CUR_SECRET, JSON.stringify({ id: cur ? cur.id : null, ts: Date.now() }));
+    } catch (e) {
+      PluginAPI.log.warn('[week-planner] cannot store the current task', e);
     }
   });
 

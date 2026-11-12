@@ -503,6 +503,40 @@ function drag(w, from, to) {
     });
   }
 
+  // ---------- kanban: "+" of a column ----------
+  {
+    const { w, $ } = open('?page=kanban');
+    await wait(200);
+    const col = (start) => colByTitle($('kBoard'), start);
+    const newTask = (id, title, o) => Object.assign({ id, title, isDone: false, tagIds: [], subTaskIds: [], timeEstimate: 0,
+      timeSpent: 0, created: Date.now() }, o || {});
+    col('В работе').querySelector('.add-btn').click();
+    await wait(50);
+    check('"+" of a column opens the add task bar of Super Productivity', () => {
+      assert.deepStrictEqual(Array.from(w.__actions), ['[Layout] Show AddTaskBar']);
+      assert.ok($('toast').textContent.includes('«В работе»'));
+    });
+    w.__tasks.push(newTask('a1', 'Новая из строки'));
+    w.__tasks.push(newTask('a2', 'Подзадача', { parentId: 't2' }));
+    w.__tasks.push(newTask('a3', 'Старая', { created: 1700000000000 }));
+    w.document.dispatchEvent(new w.Event('visibilitychange'));
+    await wait(450);
+    check('a task created while the bar is open goes to that column', () => {
+      assert.deepStrictEqual(JSON.parse(w.__store.t_a1), { w: '2026-W45', c: 'unsorted', s: 'doing' });
+      assert.ok(names(col('В работе')).includes('Новая из строки'));
+      assert.ok(w.__tasks.find((x) => x.id === 'a1').tagIds.length === 1, 'gets the #in-progress tag');
+      assert.ok(!w.__store.t_a2 && !w.__store.t_a3, 'subtasks and old tasks stay unplanned');
+    });
+    w.document.dispatchEvent(new w.Event('pointerdown'));
+    await wait(450);
+    w.__tasks.push(newTask('a4', 'После клика', { created: Date.now() + 1000 }));
+    w.document.dispatchEvent(new w.Event('visibilitychange'));
+    await wait(450);
+    check('a click in the plugin ends the wait', () => {
+      assert.ok(!w.__store.t_a4);
+    });
+  }
+
   // ---------- #in-progress tag set in Super Productivity ----------
   {
     const { w, $ } = open('?page=kanban&ptag=1');
@@ -527,6 +561,45 @@ function drag(w, from, to) {
     await wait(450);
     check('adding the tag in Super Productivity moves the card to In progress', () => {
       assert.strictEqual(JSON.parse(w.__store.t_t6).s, 'doing');
+    });
+  }
+
+  // ---------- hours: a done task counts its spent time ----------
+  // Week 45: t3 (Career, done, estimate 3h) and t4 (Career, estimate 6h). Week plan is 19h 30m with t3 at 3h.
+  {
+    const { w, $ } = open('?page=week');
+    await wait(150);
+    const task = (id) => w.__tasks.find((x) => x.id === id);
+    const careerHours = () => colByTitle($('weekBoard'), 'Карьера').querySelector('.hours').textContent;
+    const refresh = async () => { w.document.dispatchEvent(new w.Event('visibilitychange')); await wait(450); };
+
+    task('t3').timeSpent = 0.5 * 3600e3;
+    await refresh();
+    check('a done task faster than the estimate counts the spent time', () => {
+      assert.ok(careerHours().startsWith('6ч 30м /'), careerHours());
+      assert.ok($('weekPanel').textContent.includes('План недели 17ч /'), $('weekPanel').textContent);
+    });
+
+    task('t3').timeSpent = 12 * 3600e3;
+    await refresh();
+    check('a done task slower than the estimate counts the spent time, limits too', () => {
+      assert.ok(careerHours().startsWith('18ч /'), careerHours());
+      assert.ok($('weekBanner').textContent.includes('Карьера: 18ч из 16ч (+2ч)'), $('weekBanner').textContent);
+    });
+
+    task('t3').timeSpent = 0;
+    await refresh();
+    check('a done task without tracked time counts the estimate', () => {
+      assert.ok(careerHours().startsWith('9ч /'), careerHours());
+    });
+
+    task('t3').timeSpent = 0.5 * 3600e3;
+    task('t1').timeSpent = 6 * 3600e3;
+    $('tabKanban').click();
+    await refresh();
+    check('kanban: Done counts the spent time, open tasks keep the estimate', () => {
+      assert.ok($('kPanel').textContent.includes('Готово 30м из 17ч'), $('kPanel').textContent);
+      assert.ok(colByTitle($('kBoard'), 'Готово').querySelector('.bcol-right').textContent.startsWith('30м'));
     });
   }
 
@@ -631,6 +704,28 @@ function drag(w, from, to) {
       assert.ok(!task('t2'));
       assert.strictEqual(w.__store.t_t2, '');
       assert.ok(!card('Курсовая'));
+    });
+  }
+
+  // ---------- the task with time tracking ----------
+  {
+    const { w, $ } = open('?page=kanban');
+    w.__secrets.cur = JSON.stringify({ id: 't2', ts: 1 });
+    await wait(200);
+    const card = (id) => $('kBoard').querySelector('li.item[data-id="' + id + '"]');
+    check('the tracked task is highlighted on open', () => {
+      assert.ok(card('t2').classList.contains('cur'));
+      assert.strictEqual($('kBoard').querySelectorAll('li.item.cur').length, 1);
+    });
+    w.__secrets.cur = JSON.stringify({ id: 't1', ts: 2 });
+    await wait(900);
+    check('the highlight follows the tracked task without a reload', () => {
+      assert.ok(card('t1').classList.contains('cur') && !card('t2').classList.contains('cur'));
+    });
+    w.__secrets.cur = JSON.stringify({ id: null, ts: 3 });
+    await wait(900);
+    check('no highlight when tracking stops', () => {
+      assert.strictEqual($('kBoard').querySelectorAll('li.item.cur').length, 0);
     });
   }
 
