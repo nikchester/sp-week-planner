@@ -1,0 +1,91 @@
+name: Release
+# Push a tag vX.Y.Z (equal to the version in week-planner/manifest.json, package.json
+# and a "## X.Y.Z — <date>" heading in CHANGELOG.md): tests, ZIP build with
+# scripts/build.ps1, then a GitHub release with notes from that CHANGELOG section.
+on:
+  push:
+    tags: ['v*.*.*']
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          # No dependency cache in a job that can publish releases (cache poisoning).
+          package-manager-cache: false
+      - name: Check tag matches manifest.json, package.json and CHANGELOG
+        run: |
+          V="${GITHUB_REF_NAME#v}"
+          if ! [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME is not vX.Y.Z"
+            exit 1
+          fi
+          manifest=$(node -p "require('./week-planner/manifest.json').version")
+          package=$(node -p "require('./package.json').version")
+          fail=0
+          if [ "$manifest" != "$V" ]; then
+            echo "::error file=week-planner/manifest.json::version $manifest, tag $GITHUB_REF_NAME"
+            fail=1
+          fi
+          if [ "$package" != "$V" ]; then
+            echo "::error file=package.json::version $package, tag $GITHUB_REF_NAME"
+            fail=1
+          fi
+          if ! awk -v h="## $V — " 'index($0, h) == 1 { found = 1 } END { exit !found }' CHANGELOG.md; then
+            echo "::error file=CHANGELOG.md::no \"## $V — <date>\" heading"
+            fail=1
+          fi
+          if [ "$fail" -ne 0 ]; then exit 1; fi
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+      - name: Release notes from CHANGELOG
+        run: |
+          awk -v h="## $VERSION — " '
+            index($0, h) == 1 { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md"; then
+            echo "::error file=CHANGELOG.md::section $VERSION is empty"
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/notes.md"
+      - name: Install and test
+        run: npm ci && npm test
+      - name: Build ZIP
+        run: |
+          pwsh -NoLogo -NoProfile -File scripts/build.ps1
+          zip="dist/week-planner-$VERSION.zip"
+          if [ ! -f "$zip" ]; then
+            echo "::error::$zip was not built"
+            exit 1
+          fi
+          unzip -l "$zip"
+          names=$(unzip -Z1 "$zip")
+          for f in manifest.json plugin.js index.html; do
+            if ! grep -qxF "$f" <<< "$names"; then
+              echo "::error::$f is not at the root of $zip"
+              exit 1
+            fi
+          done
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "dist/week-planner-$VERSION.zip" \
+            --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md"
