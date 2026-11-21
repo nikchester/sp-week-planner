@@ -965,7 +965,6 @@
       cardSort: normSort(raw.cardSort, d.cardSort),
       poolPreset: typeof raw.poolPreset === 'string' ? raw.poolPreset : null,
       progressTagInit: raw.progressTagInit === true,
-      colViews: normColViews(raw.colViews)
     };
     if (Array.isArray(raw.cats)) {
       cfg.cats = raw.cats.filter(function (c) { return c && c.id; }).map(function (c) {
@@ -1012,8 +1011,6 @@
     try {
       var o = JSON.parse(v);
       if (o && WEEK_RE.test(o.w)) {
-        return withEntry({ w: o.w, c: o.c ? String(o.c) : UNSORTED, s: o.s === 'doing' ? 'doing' : 'todo' },
-          typeof o.o === 'number' && isFinite(o.o) && STATUSES.indexOf(o.os) !== -1 ? { o: o.o, os: o.os } : {});
       }
     } catch (e) { /* ignore broken entries */ }
     return null;
@@ -1193,7 +1190,6 @@
   function statusOf(task) {
     if (task.isDone) return 'done';
     var e = state.assign[task.id];
-    return e && e.s === 'doing' ? 'doing' : 'todo';
   }
   // Time a task takes in plans and limits. A done task counts its spent time; a done task without
   // tracked time and an open task count the estimate.
@@ -1978,12 +1974,10 @@
       el('div', { className: 'bar' }, [el('div', { style: 'width:' + (total ? Math.round(doneH / total * 100) : 0) + '%' })])
     ]);
 
-    fill($('kBoard'), STATUSES.map(function (s) {
       var all = items.filter(function (x) { return statusOf(x) === s; });
       var view = colItems('k:' + s, all);
       var list = view.shown;
       var col = el('div', { className: 'bcol st-' + s }, [
-        colHead('k:' + s, t('st_' + s), all, view, el('span', { className: 'bcol-right' }, [
           el('span', { className: 'muted', text: fmtDur(hoursOf(all)) }), addBtn(s)
         ])),
         list.length ? el('ul', { className: 'list' }, list.map(kanbanCard)) : el('p', { className: 'muted empty', text: t('emptyCol') })
@@ -2360,8 +2354,6 @@
     }
     if (view === 'status') {
       items = ctxBack(t('ctxStatus'));
-      STATUSES.forEach(function (st) {
-        items.push(ctxItem(radio(statusOf(task) === st), t('st_' + st), ctxAct(function () { return setStatus(task, st); })));
       });
       return items;
     }
@@ -2677,7 +2669,6 @@
       nodes.push(el('div', { className: 'field' }, [el('label', { text: t('sort') })].concat(sortRows(d.sort, isKanban))));
       if (isKanban) nodes.push(el('p', { className: 'muted', text: t('manualHint') }));
       nodes.push(el('div', { id: 'edPreview', className: 'muted' }));
-    } else {
       nodes.push(el('h2', { text: t('edCats') }));
       nodes.push(el('p', { className: 'muted', text: t('edCatsHint') }));
       nodes.push(el('div', { className: 'field' }, catRows(d).concat([el('button', {
@@ -2740,7 +2731,6 @@
       // A column without conditions and with the common order keeps following the common order.
       if (!d.conds.length && sameSort) delete views[editor.col.key];
       else views[editor.col.key] = { match: d.match === 'any' ? 'any' : 'all', conds: d.conds, sort: sameSort ? null : d.sort };
-    } else {
       state.cfg.cats = d.cats.map(function (c) {
         var name = (c.name || '').trim();
         var isBuiltIn = t('cat_' + c.id) !== 'cat_' + c.id;
