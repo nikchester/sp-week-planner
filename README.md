@@ -1,124 +1,126 @@
 # Week Planner for Super Productivity
 
+**English** · [Русский](README.ru.md)
+
 Plugin for [Super Productivity](https://github.com/super-productivity/super-productivity) 20+:
 plan tasks for whole weeks, sort them into categories with hour limits, and work through the week on a kanban board.
 
 > **Status: early development (0.x).** Things may change between versions.
 > Keep the automatic backups of Super Productivity enabled.
 
-## Экраны
+## Screens
 
-Плагин открывается кнопками в верхней панели Super Productivity: «План недели» и «Канбан недели».
-Внутри есть 3 вкладки.
+The plugin opens from buttons in the Super Productivity header: "Week planner" and "Week kanban".
+It has 3 tabs.
 
-### Планирование
+### Planning
 
-![Планирование](screenshots/planning.png)
+![Planning](screenshots/en/planning.png)
 
-- Слева — пул «Не запланировано»: невыполненные задачи без недели. Фильтр и сортировка настраиваются по всем полям задачи.
-- Готовые фильтры пула: «Срочные», «Срок в неделе N», «С приоритетом», «Без оценки», «Быстрые ≤ 30м»,
-  «Начатые», «Давно лежат», «Из трекера». «Мой фильтр» настраивается кнопкой «Фильтр и сортировка».
-- Справа — 6 ближайших недель. В каждой видно загрузку по категориям и общий план недели.
-- Задачу можно перетащить на неделю или добавить кнопкой «→ Нед. N». Щелчок по неделе выбирает, куда добавляют кнопки.
-- Сверху — просроченные задачи прошлых недель с переносом на текущую неделю.
+- On the left is the "Unplanned" pool: open tasks without a week. Filter and sort it by any task field.
+- Ready-made pool filters: "Urgent", "Due in W45", "With priority", "No estimate", "Quick ≤ 30m",
+  "Started", "Old", "From tracker". "My filter" is set up with the "Filter & sort" button.
+- On the right are the next 6 weeks. Each shows the load per category and the week plan in total.
+- Drag a task onto a week or add it with the "→ W45" button. Click a week to choose where the buttons add tasks.
+- At the top are overdue tasks from past weeks, with a button to move them to the current week.
 
-### Неделя
+### Week
 
-![Неделя](screenshots/week.png)
+![Week](screenshots/en/week.png)
 
-- Колонки — категории: «Несортированное», «Университет», «Карьера», «Личное».
-- Новые задачи недели попадают в «Несортированное». Перетащите карточку в нужную категорию.
-- Карточки выглядят как на доске Super Productivity: флажок, заголовок, проект и метки с иконками, приоритет, оценка, срок.
-- На карточке нет кнопок, кроме «⋯» при наведении. Перенос между неделями и «Убрать из недели» — в меню задачи.
-- Щелчок по оценке на карточке («1ч» или «+ оценка») открывает выбор оценки.
-- У каждой категории свой лимит часов, у недели — общий лимит. При превышении появляются баннер, красная колонка и уведомление.
-- Часы недели и категорий считаются так: невыполненная задача — по оценке, выполненная — по затраченному времени.
-  Если у выполненной задачи нет затраченного времени, плагин берёт оценку.
-- Сумма лимитов категорий не может быть больше лимита недели.
-- Карандаш справа от названия колонки открывает фильтр и сортировку этой колонки. Фильтр только скрывает карточки:
-  часы и лимиты учитывают все задачи колонки, а в заголовке видно «скрыто N». Настройки действуют на все недели.
-- Категории и **стандартные лимиты** задаются кнопкой «Категории и стандартные лимиты». Их получают все недели.
-- Лимиты в заголовках колонок и на панели меняют **только эту неделю**. После первой правки неделя получает
-  свои лимиты, и новые стандартные лимиты её больше не меняют. Кнопка «Вернуть стандартные» отменяет свои лимиты недели.
+- Columns are categories: "Unsorted", "University", "Career", "Personal".
+- New tasks of the week go to "Unsorted". Drag a card to the right category.
+- Cards look like on the Super Productivity board: checkbox, title, project and tags with icons, priority, estimate, due date.
+- A card has no buttons except "⋯" on hover. Moving between weeks and "Remove from week" are in the task menu.
+- Click the estimate on a card ("1h" or "+ estimate") to pick an estimate.
+- Each category has its own hour limit, and the week has a total limit. Going over shows a banner, a red column and a notification.
+- Week and category hours count an open task by its estimate and a done task by its spent time.
+  A done task without spent time counts its estimate.
+- Category limits together cannot exceed the week limit.
+- The pencil next to the column title opens the filter and sort of that column. The filter only hides cards:
+  hours and limits count all tasks of the column, and the header shows "hidden N". The settings apply to all weeks.
+- Categories and **default limits** are set with the "Categories & default limits" button. All weeks get them.
+- Limits in the column headers and on the panel change **this week only**. After the first change the week gets
+  its own limits, and new default limits no longer change it. The "Use defaults" button drops the week's own limits.
 
-### Канбан
+### Kanban
 
-![Канбан](screenshots/kanban.png)
+![Kanban](screenshots/en/kanban.png)
 
-- Колонки «Сделать», «В работе», «Готово» для текущей недели.
-- Перенос в «Готово» отмечает задачу выполненной в Super Productivity.
-- Колонка «В работе» связана с меткой `#in-progress` в обе стороны. Перенос в «В работе» ставит метку, уход из колонки снимает её.
-  Метка, поставленная или снятая в самом Super Productivity, переносит карточку при следующем обновлении плагина.
-  Если метки нет, плагин создаёт её сам. При первом запуске задачи, которые уже стояли в «В работе», получают метку.
-- Статус меняется перетаскиванием, флажком на карточке или пунктом «Статус» в меню задачи.
-- Фильтр по категориям сверху.
-- Кнопка «Списки канбана» открывает редактор колонок: можно переименовать и переставить стандартные списки, добавить свои или удалить пользовательские. При удалении списка его задачи переходят в «Сделать»; «Готово» связано с выполнением задачи в Super Productivity.
-- У колонок канбана тоже есть карандаш с фильтром и сортировкой.
-- Ручной порядок: перетащите карточку на другую карточку, и она встанет перед ней или после неё.
-  Колонка при этом переходит на сортировку «Ручной порядок». Вернуть прежнюю сортировку можно карандашом.
-- Кнопка «+» в заголовке колонки открывает обычную строку добавления задачи Super Productivity.
-  Задачи, созданные в этой строке, попадают в эту колонку канбана, в выбранную неделю и категорию
-  (без выбранной категории — в «Несортированное»). Ожидание заканчивается при следующем клике в плагине или через 15 минут.
+- Columns "To do", "In progress", "Done" for the current week.
+- Moving a task to "Done" marks it done in Super Productivity.
+- The "In progress" column is linked with the `#in-progress` tag both ways. Moving a card to "In progress" sets the tag, moving it out removes the tag.
+  A tag set or removed in Super Productivity itself moves the card on the next plugin refresh.
+  If the tag does not exist, the plugin creates it. On the first run, tasks that were already "In progress" get the tag.
+- Change the status by dragging, with the checkbox on the card, or with "Status" in the task menu.
+- Category filter at the top.
+- The "Kanban lists" button opens the column editor: rename and reorder the built-in lists, add your own or delete custom ones. Tasks of a deleted list go to "To do"; "Done" stays linked to task completion in Super Productivity.
+- Kanban columns also have the pencil with filter and sort.
+- Manual order: drop a card onto another card, and it goes before or after it.
+  The column then switches to the "Manual order (drag)" sort. The pencil brings the previous sort back.
+- The "+" button in the column header opens the usual add task bar of Super Productivity.
+  Tasks created in this bar go to this kanban column, to the chosen week and category
+  (no category chosen: "Unsorted"). The wait ends on the next click in the plugin or after 15 minutes.
 
-### Меню задачи
+### Task menu
 
-![Меню задачи](screenshots/task-menu.png)
+![Task menu](screenshots/en/task-menu.png)
 
-Щелчок правой кнопкой по любой карточке (или кнопка «⋯» на ней) открывает меню, похожее на нативное меню
-Super Productivity: срок, выполнение, отслеживание времени, оценка, метки, проект, приоритет, неделя,
-категория, панель задачи, удаление. Открыть само нативное меню API плагинов не позволяет.
+Right-click any card (or click "⋯" on it) to open a menu similar to the native
+Super Productivity menu: due date, done, time tracking, estimate, tags, project, priority, week,
+category, task details, delete. The plugin API cannot open the native menu itself.
 
-### Задача с учётом времени
+### Task with time tracking
 
-Карточка задачи, по которой идёт учёт времени, выделена на всех вкладках, как в Super Productivity:
-фон светлее, вместо флажка — значок ▶. При наведении флажок возвращается.
+The card of the task with running time tracking is highlighted on every tab, like in Super Productivity:
+a lighter background and a ▶ icon in place of the checkbox. The checkbox comes back on hover.
 
-## Установка
+## Installation
 
-1. Скачайте последний ZIP со страницы [релизов](https://github.com/nikchester/sp-week-planner/releases/latest) или соберите его сами (см. «Разработка»).
-2. В Super Productivity откройте «Настройки → Плагины».
-3. Загрузите ZIP-архив и включите плагин.
+1. Download the latest ZIP from the [releases](https://github.com/nikchester/sp-week-planner/releases/latest) page or build it yourself (see "Development").
+2. In Super Productivity open "Settings → Plugins".
+3. Upload the ZIP and enable the plugin.
 
-> **Не удаляйте плагин перед обновлением.** Super Productivity удаляет данные плагина
-> вместе с плагином. Загружайте новый ZIP поверх установленной версии — данные сохраняются.
+> **Do not remove the plugin before an update.** Super Productivity deletes the plugin data
+> together with the plugin. Upload the new ZIP over the installed version — the data stays.
 
-## Где хранятся данные
+## Where the data is stored
 
-Плагин хранит данные через `persistDataSynced`, поэтому они синхронизируются между устройствами:
+The plugin stores data with `persistDataSynced`, so it syncs between devices:
 
-- `t_<id задачи>` — JSON `{"w": "2026-W46", "c": "uni", "s": "todo"}`: неделя, категория, статус на канбане;
-  после ручной сортировки добавляются `"o": 3, "os": "todo"` — позиция в колонке канбана и сама колонка;
-- `cfg` — категории, стандартные лимиты, списки канбана, фильтр пула и порядок карточек;
-- `wl_<неделя>` — свои лимиты недели, например `wl_2026-W45`: `{"week": 30, "cats": {"uni": 10}}`.
+- `t_<task id>` — JSON `{"w": "2026-W46", "c": "uni", "s": "todo"}`: week, category, kanban status;
+  after manual sorting `"o": 3, "os": "todo"` are added — the position in the kanban column and the column itself;
+- `cfg` — categories, default limits, kanban lists, pool filter and card order;
+- `wl_<week>` — own limits of a week, for example `wl_2026-W45`: `{"week": 30, "cats": {"uni": 10}}`.
 
-Какую вкладку открыть и по какой задаче идёт учёт времени, `plugin.js` передаёт интерфейсу через локальное хранилище `setSecret` (не синхронизируется).
+`plugin.js` passes the tab to open and the task with time tracking to the view through the local `setSecret` storage (not synced).
 
-Автоматические копии Super Productivity на Windows лежат в `%APPDATA%\superProductivity\backups`.
-Данные плагина находятся в них под ключами `week-planner:t_…` и `week-planner:cfg`.
+On Windows the automatic Super Productivity backups are in `%APPDATA%\superProductivity\backups`.
+The plugin data is there under the keys `week-planner:t_…` and `week-planner:cfg`.
 
-## Ограничения
+## Limitations
 
-- В API плагинов нет способа показать неделю на строке задачи в самом приложении. Неделю видно только в плагине.
-- Часы — сумма оценок задач, включая выполненные. Задача без оценки даёт 0 ч.
-- Оценку родительской задачи Super Productivity считает по подзадачам, поэтому на её карточке оценку изменить нельзя.
-- Статус «В работе» хранит плагин. Он не связан с учётом времени в Super Productivity.
-- В API плагинов нет метода «текущая задача». Плагин узнаёт её из хука `currentTaskChange`.
-  Если учёт времени запущен до загрузки плагина, выделение появится после следующего старта или паузы.
-- Поля `priority` нет в публичном `types.ts`. Плагин меняет его через `updateTask`; это работает, только если приложение принимает это поле.
-- Пунктов «Не буду делать» нет: в API нет для них полей или методов.
+- The plugin API cannot show the week on a task row in the app itself. The week is visible only in the plugin.
+- Hours are the sum of task estimates, done tasks included. A task without an estimate counts as 0 h.
+- Super Productivity computes the estimate of a parent task from its subtasks, so it cannot be changed on the parent card.
+- The "In progress" status is kept by the plugin. It is not linked to time tracking in Super Productivity.
+- The plugin API has no "current task" method. The plugin learns it from the `currentTaskChange` hook.
+  If time tracking started before the plugin loaded, the highlight appears after the next start or pause.
+- The `priority` field is not in the public `types.ts`. The plugin changes it with `updateTask`; this works only if the app accepts the field.
+- There are no "Won't do" items: the API has no fields or methods for them.
 
-## Разработка
+## Development
 
 ```sh
 npm install              # jsdom for tests
 npm test                 # syntax check + UI smoke test in jsdom
-npm run screenshots      # renders screenshots/ with headless Edge/Chrome
+npm run screenshots      # renders screenshots/en and screenshots/ru with headless Edge/Chrome
 pwsh scripts/build.ps1   # dist/week-planner-<version>.zip
 ```
 
-- `week-planner/manifest.json`, `plugin.js` — контекстное меню, кнопки в шапке, горячие клавиши, хуки.
-- `week-planner/index.html` — интерфейс (iframe, весь CSS и JS внутри).
-- `tests/` — фейковый `PluginAPI` с тестовыми данными, smoke-тест и скрипт скриншотов.
+- `week-planner/manifest.json`, `plugin.js` — context menu, header buttons, keyboard shortcuts, hooks.
+- `week-planner/index.html` — the view (iframe, all CSS and JS inline).
+- `tests/` — a fake `PluginAPI` with test data, the smoke test and the screenshot script.
 
 ## License
 
