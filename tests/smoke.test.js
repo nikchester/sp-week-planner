@@ -537,6 +537,49 @@ function drag(w, from, to) {
     });
   }
 
+  // ---------- kanban: own lists ----------
+  {
+    const { w, $ } = open('?page=kanban');
+    await wait(200);
+    const col = (start) => colByTitle($('kBoard'), start);
+    $('kListsBtn').click();
+    btn($('modal'), '+ Список').click();
+    const inputs = $('modal').querySelectorAll('.catrow input');
+    inputs[inputs.length - 1].value = 'Ждёт ответа';
+    inputs[inputs.length - 1].dispatchEvent(new w.Event('input'));
+    btn($('modal'), 'Сохранить').click();
+    await wait(50);
+    const own = JSON.parse(w.__store.cfg).kanbanLists[3];
+    check('the list editor adds an own kanban column', () => {
+      assert.strictEqual($('kBoard').querySelectorAll('.bcol').length, 4);
+      assert.strictEqual(own.name, 'Ждёт ответа');
+      assert.ok(col('Ждёт ответа'));
+    });
+    col('Ждёт ответа').querySelector('.add-btn').click();
+    await wait(50);
+    check('"+" of an own column names it in the toast', () => {
+      assert.ok($('toast').textContent.includes('«Ждёт ответа»'));
+    });
+    w.__tasks.push({ id: 'b1', title: 'В свою колонку', isDone: false, tagIds: [], subTaskIds: [], timeEstimate: 0,
+      timeSpent: 0, created: Date.now() });
+    w.document.dispatchEvent(new w.Event('visibilitychange'));
+    await wait(450);
+    check('a task added by "+" of an own column goes to that column', () => {
+      assert.strictEqual(JSON.parse(w.__store.t_b1).s, own.id);
+      assert.ok(names(col('Ждёт ответа')).includes('В свою колонку'));
+    });
+    $('kListsBtn').click();
+    const rows = $('modal').querySelectorAll('.catrow');
+    [...rows[rows.length - 1].querySelectorAll('button')].pop().click();
+    btn($('modal'), 'Сохранить').click();
+    await wait(50);
+    check('deleting an own list returns its tasks to To do', () => {
+      assert.strictEqual($('kBoard').querySelectorAll('.bcol').length, 3);
+      assert.strictEqual(JSON.parse(w.__store.t_b1).s, 'todo');
+      assert.ok(names(col('Сделать')).includes('В свою колонку'));
+    });
+  }
+
   // ---------- #in-progress tag set in Super Productivity ----------
   {
     const { w, $ } = open('?page=kanban&ptag=1');

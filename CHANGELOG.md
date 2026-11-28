@@ -2,6 +2,15 @@
 
 The project is in early development (0.x). Data formats and UI may still change.
 
+## 0.14.0 — 2026-11-28
+
+- **Kanban lists editor.** The "Kanban lists" button on the kanban page opens an editor: rename the built-in lists,
+  change their order, add own lists and delete them. "Done" stays linked to task completion.
+- Tasks of a deleted own list go back to "To do". Task entries keep own list ids.
+- "+" of an own column puts new tasks into that column. Toasts and the "Status" item of the task menu show
+  the list name, also for renamed lists.
+- README is in English now, the Russian one is `README.ru.md`. Screenshots per language.
+
 ## 0.13.1 — 2026-11-12
 
 - **A done task counts its spent time**, not its estimate: week plan, category hours, limits and the banner,
