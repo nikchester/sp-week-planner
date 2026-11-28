@@ -374,6 +374,7 @@
       </div>
       <button type="button" id="kNext" class="icon">›</button>
       <button type="button" id="kToday" class="ghost"></button>
+      <button type="button" id="kListsBtn" class="ghost"></button>
     </div>
     <div id="kCats" class="chips" style="margin-bottom:10px"></div>
     <div id="kPanel" class="panel"></div>
@@ -467,6 +468,7 @@
       colAdd: 'Add a task to this column', addBarNo: 'This Super Productivity version cannot open the add task bar for plugins',
       addBarHint: 'New tasks go to «{name}» of week {w}', addBarDone: 'Added to «{name}»: {n}',
       colEdit: 'Filter & sort of this column', edCol: 'Column «{name}»: filter & sort',
+      kLists: 'Kanban lists', kListsHint: 'Rename the built-in lists or add your own. “Done” remains linked to task completion.', kListAdd: '+ List',
       edColHint: 'The filter only hides cards. Hours and limits count all tasks of the column.',
       colHidden: 'hidden {n}', colHiddenTitle: 'Hidden by the column filter. They still count toward the hours.',
       previewCol: 'Shown now: {a} of {n}', colReset: 'Reset to default',
@@ -556,6 +558,7 @@
       colAdd: 'Добавить задачу в эту колонку', addBarNo: 'Эта версия Super Productivity не даёт плагинам открыть строку добавления задачи',
       addBarHint: 'Новые задачи попадут в «{name}» недели {w}', addBarDone: 'Добавлено в «{name}»: {n}',
       colEdit: 'Фильтр и сортировка колонки', edCol: 'Колонка «{name}»: фильтр и сортировка',
+      kLists: 'Списки канбана', kListsHint: 'Переименуйте стандартные списки или добавьте свои. «Готово» остаётся связано с выполнением задачи.', kListAdd: '+ Список',
       edColHint: 'Фильтр только скрывает карточки. Часы и лимиты учитывают все задачи колонки.',
       colHidden: 'скрыто {n}', colHiddenTitle: 'Скрыты фильтром колонки. Часы и лимиты их учитывают.',
       previewCol: 'Сейчас показано: {a} из {n}', colReset: 'Сбросить',
@@ -888,6 +891,7 @@
   function defaultCfg() {
     return {
       v: 2,
+      kanbanLists: STATUSES.map(function (id) { return { id: id, name: '' }; }),
       pool: {
         id: 'pool', match: 'all', conds: [{ field: 'isSubtask', op: 'isFalse' }],
         sort: [{ field: 'due', dir: 'asc' }, { field: 'created', dir: 'asc' }]
@@ -965,7 +969,10 @@
       cardSort: normSort(raw.cardSort, d.cardSort),
       poolPreset: typeof raw.poolPreset === 'string' ? raw.poolPreset : null,
       progressTagInit: raw.progressTagInit === true,
-      colViews: normColViews(raw.colViews)
+      colViews: normColViews(raw.colViews),
+      kanbanLists: Array.isArray(raw.kanbanLists) ? raw.kanbanLists.filter(function (c) { return c && typeof c.id === 'string' && c.id; }).map(function (c) {
+        return { id: c.id, name: typeof c.name === 'string' ? c.name : '' };
+      }) : d.kanbanLists
     };
     if (Array.isArray(raw.cats)) {
       cfg.cats = raw.cats.filter(function (c) { return c && c.id; }).map(function (c) {
@@ -977,6 +984,10 @@
         .map(function (l) { return { id: String(l.id), name: l.name || '', limitH: posNum(l.limitH) }; }));
     }
     if (!cfg.cats.some(function (c) { return c.id === UNSORTED; })) cfg.cats.unshift({ id: UNSORTED, name: '', limitH: null });
+    STATUSES.forEach(function (id, i) {
+      if (!cfg.kanbanLists.some(function (c) { return c.id === id; })) cfg.kanbanLists.splice(i, 0, { id: id, name: '' });
+    });
+    cfg.kanbanLists = cfg.kanbanLists.filter(function (c, i, a) { return a.findIndex(function (x) { return x.id === c.id; }) === i; });
     if (raw.weekLimitH === undefined && raw.all) cfg.weekLimitH = posNum(raw.all.limitH);
     if (raw.cardSort === undefined && raw.all) cfg.cardSort = normSort(raw.all.sort, d.cardSort);
     return cfg;
@@ -987,6 +998,15 @@
     var key = 'cat_' + c.id;
     var s = t(key);
     return s === key ? t('untitled') : s;
+  }
+  function kanbanStatuses() { return state.cfg.kanbanLists || STATUSES.map(function (id) { return { id: id, name: '' }; }); }
+  function kanbanStatusName(s) {
+    if (s.name) return s.name;
+    var key = 'st_' + s.id, translated = t(key);
+    return translated === key ? t('untitled') : translated;
+  }
+  function statusName(id) {
+    return kanbanStatusName(kanbanStatuses().filter(function (s) { return s.id === id; })[0] || { id: id, name: '' });
   }
   function catById(id) {
     var found = state.cfg.cats.filter(function (c) { return c.id === id; })[0];
@@ -1012,8 +1032,8 @@
     try {
       var o = JSON.parse(v);
       if (o && WEEK_RE.test(o.w)) {
-        return withEntry({ w: o.w, c: o.c ? String(o.c) : UNSORTED, s: o.s === 'doing' ? 'doing' : 'todo' },
-          typeof o.o === 'number' && isFinite(o.o) && STATUSES.indexOf(o.os) !== -1 ? { o: o.o, os: o.os } : {});
+        return withEntry({ w: o.w, c: o.c ? String(o.c) : UNSORTED, s: typeof o.s === 'string' && o.s ? o.s : 'todo' },
+          typeof o.o === 'number' && isFinite(o.o) && typeof o.os === 'string' ? { o: o.o, os: o.os } : {});
       }
     } catch (e) { /* ignore broken entries */ }
     return null;
@@ -1193,7 +1213,7 @@
   function statusOf(task) {
     if (task.isDone) return 'done';
     var e = state.assign[task.id];
-    return e && e.s === 'doing' ? 'doing' : 'todo';
+    return e && kanbanStatuses().some(function (s) { return s.id === e.s; }) ? e.s : 'todo';
   }
   // Time a task takes in plans and limits. A done task counts its spent time; a done task without
   // tracked time and an open task count the estimate.
@@ -1978,12 +1998,13 @@
       el('div', { className: 'bar' }, [el('div', { style: 'width:' + (total ? Math.round(doneH / total * 100) : 0) + '%' })])
     ]);
 
-    fill($('kBoard'), STATUSES.map(function (s) {
+    fill($('kBoard'), kanbanStatuses().map(function (status) {
+      var s = status.id;
       var all = items.filter(function (x) { return statusOf(x) === s; });
       var view = colItems('k:' + s, all);
       var list = view.shown;
       var col = el('div', { className: 'bcol st-' + s }, [
-        colHead('k:' + s, t('st_' + s), all, view, el('span', { className: 'bcol-right' }, [
+        colHead('k:' + s, kanbanStatusName(status), all, view, el('span', { className: 'bcol-right' }, [
           el('span', { className: 'muted', text: fmtDur(hoursOf(all)) }), addBtn(s)
         ])),
         list.length ? el('ul', { className: 'list' }, list.map(kanbanCard)) : el('p', { className: 'muted empty', text: t('emptyCol') })
@@ -2020,7 +2041,7 @@
       if (pendingAdd === p) pendingAdd = null;
       throw e;
     }
-    showToast(t('addBarHint', { name: t('st_' + s), w: weekNum(p.w) }), false, null);
+    showToast(t('addBarHint', { name: statusName(s), w: weekNum(p.w) }), false, null);
   }
   // A click in the plugin means the add task bar is closed: the next load is the last one that waits.
   function endAddWait() {
@@ -2046,8 +2067,8 @@
   }
   async function placeAdded(got) {
     var p = got.p, changes = {};
-    got.ids.forEach(function (id) { changes[id] = { w: p.w, c: p.c, s: p.s === 'doing' ? 'doing' : 'todo' }; });
-    await changeEntries(changes, t('addBarDone', { name: t('st_' + p.s), n: got.ids.length }), true);
+    got.ids.forEach(function (id) { changes[id] = { w: p.w, c: p.c, s: p.s === 'done' ? 'todo' : p.s }; });
+    await changeEntries(changes, t('addBarDone', { name: statusName(p.s), n: got.ids.length }), true);
     if (p.s === 'done') {
       for (var i = 0; i < got.ids.length; i++) {
         var task = state.tasks[got.ids[i]];
@@ -2099,7 +2120,7 @@
     var switched = useManualOrder(key);
     await applyEntries(changes);
     if (switched) {
-      showToast(t('manualOn', { name: t('st_' + s) }), false, null);
+      showToast(t('manualOn', { name: statusName(s) }), false, null);
       await saveCfg();
     }
   }
@@ -2260,7 +2281,7 @@
     }));
     if (e) {
       items.push(ctxItem('◔', t('ctxStatus'), function () { ctxGo('status'); }, {
-        sub: true, disabled: archived, val: t('st_' + statusOf(task))
+        sub: true, disabled: archived, val: statusName(statusOf(task))
       }));
     }
     if (e) items.push(ctxItem('▤', t('ctxCat'), function () { ctxGo('cat'); }, { sub: true, val: catName(catById(e.c)) }));
@@ -2360,8 +2381,8 @@
     }
     if (view === 'status') {
       items = ctxBack(t('ctxStatus'));
-      STATUSES.forEach(function (st) {
-        items.push(ctxItem(radio(statusOf(task) === st), t('st_' + st), ctxAct(function () { return setStatus(task, st); })));
+      kanbanStatuses().forEach(function (st) {
+        items.push(ctxItem(radio(statusOf(task) === st.id), kanbanStatusName(st), ctxAct(function () { return setStatus(task, st.id); })));
       });
       return items;
     }
@@ -2444,6 +2465,7 @@
   function openEditor(kind, col) {
     var draft;
     if (kind === 'pool') draft = JSON.parse(JSON.stringify(activePoolView()));
+    else if (kind === 'kLists') draft = JSON.parse(JSON.stringify({ kanbanLists: kanbanStatuses() }));
     else if (kind === 'col') {
       var v = colView(col.key);
       draft = JSON.parse(JSON.stringify({ match: v.match, conds: v.conds, sort: v.sort }));
@@ -2677,7 +2699,7 @@
       nodes.push(el('div', { className: 'field' }, [el('label', { text: t('sort') })].concat(sortRows(d.sort, isKanban))));
       if (isKanban) nodes.push(el('p', { className: 'muted', text: t('manualHint') }));
       nodes.push(el('div', { id: 'edPreview', className: 'muted' }));
-    } else {
+    } else if (editor.kind === 'cats') {
       nodes.push(el('h2', { text: t('edCats') }));
       nodes.push(el('p', { className: 'muted', text: t('edCatsHint') }));
       nodes.push(el('div', { className: 'field' }, catRows(d).concat([el('button', {
@@ -2693,6 +2715,21 @@
         el('div', { id: 'edAlloc', className: 'muted', style: 'margin-top:6px' })
       ]));
       nodes.push(el('div', { className: 'field' }, [el('label', { text: t('cardSort') })].concat(sortRows(d.cardSort))));
+    } else {
+      nodes.push(el('h2', { text: t('kLists') }));
+      nodes.push(el('p', { className: 'muted', text: t('kListsHint') }));
+      d.kanbanLists.forEach(function (s, i) {
+        var builtIn = STATUSES.indexOf(s.id) !== -1;
+        nodes.push(el('div', { className: 'catrow' }, [
+          el('input', { type: 'text', value: s.name, placeholder: kanbanStatusName(s), 'aria-label': t('catName'), oninput: function (ev) { s.name = ev.target.value; } }),
+          el('button', { type: 'button', className: 'icon', text: '↑', 'aria-label': '↑', onclick: function () { moveIn(d.kanbanLists, i, -1); } }),
+          el('button', { type: 'button', className: 'icon', text: '↓', 'aria-label': '↓', onclick: function () { moveIn(d.kanbanLists, i, 1); } }),
+          builtIn ? null : el('button', { type: 'button', className: 'small danger', text: t('del'), onclick: function () { d.kanbanLists.splice(i, 1); renderEditor(); } })
+        ]));
+      });
+      nodes.push(el('button', { type: 'button', className: 'small', text: t('kListAdd'), onclick: function () {
+        d.kanbanLists.push({ id: 'k' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: '' }); renderEditor();
+      } }));
     }
     if (editor.discardArmed) nodes.push(el('div', { className: 'notice', role: 'alert', text: t('unsaved') }));
     nodes.push(el('div', { className: 'modal-foot' }, [
@@ -2740,7 +2777,7 @@
       // A column without conditions and with the common order keeps following the common order.
       if (!d.conds.length && sameSort) delete views[editor.col.key];
       else views[editor.col.key] = { match: d.match === 'any' ? 'any' : 'all', conds: d.conds, sort: sameSort ? null : d.sort };
-    } else {
+    } else if (editor.kind === 'cats') {
       state.cfg.cats = d.cats.map(function (c) {
         var name = (c.name || '').trim();
         var isBuiltIn = t('cat_' + c.id) !== 'cat_' + c.id;
@@ -2748,6 +2785,20 @@
       });
       state.cfg.weekLimitH = posNum(d.weekLimitH);
       state.cfg.cardSort = d.cardSort;
+    } else {
+      var nextIds = d.kanbanLists.map(function (s) { return s.id; });
+      var removed = kanbanStatuses().filter(function (s) { return nextIds.indexOf(s.id) === -1; }).map(function (s) { return s.id; });
+      var moved = {};
+      Object.keys(state.assign).forEach(function (id) {
+        var entry = state.assign[id];
+        if (removed.indexOf(entry.s) !== -1) moved[id] = withEntry(entry, { s: 'todo' });
+      });
+      state.cfg.kanbanLists = d.kanbanLists.map(function (s) {
+        var name = (s.name || '').trim();
+        var builtIn = t('st_' + s.id) !== 'st_' + s.id;
+        return { id: s.id, name: name || (builtIn ? '' : t('untitled')) };
+      });
+      if (Object.keys(moved).length) await applyEntries(moved);
     }
     closeEditor();
     render(true);
@@ -2808,6 +2859,7 @@
     $('planHint').textContent = t('planHint');
     $('weekToday').textContent = t('today');
     $('kToday').textContent = t('today');
+    $('kListsBtn').textContent = t('kLists');
     $('catsBtn').textContent = t('catsBtn');
     $('addBtn').textContent = t('add');
     $('stripTitle').textContent = t('stripTitle');
@@ -2847,6 +2899,7 @@
     $('kNext').addEventListener('click', function () { state.kWeek = shiftWeek(state.kWeek, 1); render(true); });
     $('kToday').addEventListener('click', function () { state.kWeek = state.curWeek; render(true); });
     $('catsBtn').addEventListener('click', function () { openEditor('cats'); });
+    $('kListsBtn').addEventListener('click', function () { openEditor('kLists'); });
 
     $('moveAllBtn').addEventListener('click', run(function () {
       return planTasks(overdueTasks().map(function (x) { return x.id; }), state.curWeek);
