@@ -1005,6 +1005,9 @@
     var key = 'st_' + s.id, translated = t(key);
     return translated === key ? t('untitled') : translated;
   }
+  function statusName(id) {
+    return kanbanStatusName(kanbanStatuses().filter(function (s) { return s.id === id; })[0] || { id: id, name: '' });
+  }
   function catById(id) {
     var found = state.cfg.cats.filter(function (c) { return c.id === id; })[0];
     return found || state.cfg.cats.filter(function (c) { return c.id === UNSORTED; })[0];
@@ -2038,7 +2041,7 @@
       if (pendingAdd === p) pendingAdd = null;
       throw e;
     }
-    showToast(t('addBarHint', { name: t('st_' + s), w: weekNum(p.w) }), false, null);
+    showToast(t('addBarHint', { name: statusName(s), w: weekNum(p.w) }), false, null);
   }
   // A click in the plugin means the add task bar is closed: the next load is the last one that waits.
   function endAddWait() {
@@ -2064,8 +2067,8 @@
   }
   async function placeAdded(got) {
     var p = got.p, changes = {};
-    got.ids.forEach(function (id) { changes[id] = { w: p.w, c: p.c, s: p.s === 'doing' ? 'doing' : 'todo' }; });
-    await changeEntries(changes, t('addBarDone', { name: t('st_' + p.s), n: got.ids.length }), true);
+    got.ids.forEach(function (id) { changes[id] = { w: p.w, c: p.c, s: p.s === 'done' ? 'todo' : p.s }; });
+    await changeEntries(changes, t('addBarDone', { name: statusName(p.s), n: got.ids.length }), true);
     if (p.s === 'done') {
       for (var i = 0; i < got.ids.length; i++) {
         var task = state.tasks[got.ids[i]];
@@ -2117,7 +2120,7 @@
     var switched = useManualOrder(key);
     await applyEntries(changes);
     if (switched) {
-      showToast(t('manualOn', { name: t('st_' + s) }), false, null);
+      showToast(t('manualOn', { name: statusName(s) }), false, null);
       await saveCfg();
     }
   }
@@ -2278,7 +2281,7 @@
     }));
     if (e) {
       items.push(ctxItem('◔', t('ctxStatus'), function () { ctxGo('status'); }, {
-        sub: true, disabled: archived, val: t('st_' + statusOf(task))
+        sub: true, disabled: archived, val: statusName(statusOf(task))
       }));
     }
     if (e) items.push(ctxItem('▤', t('ctxCat'), function () { ctxGo('cat'); }, { sub: true, val: catName(catById(e.c)) }));
